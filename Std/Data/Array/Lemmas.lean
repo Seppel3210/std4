@@ -215,7 +215,7 @@ theorem mapM_eq_mapM_data [Monad m] [LawfulMonad m] (f : α → m β) (arr : Arr
   rw [mapM_eq_foldlM, foldlM_eq_foldlM_data, ← List.foldrM_reverse]
   conv => rhs; rw [← List.reverse_reverse arr.data]
   induction arr.data.reverse with
-  | nil => simp; rfl
+  | nil => simp
   | cons a l ih => simp [ih]; simp [map_eq_pure_bind, push]
 
 theorem SatisfiesM_mapIdxM [Monad m] [LawfulMonad m] (as : Array α) (f : Fin as.size → α → m β)

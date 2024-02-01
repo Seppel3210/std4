@@ -168,7 +168,8 @@ namespace List
 @[specialize] def foldrTR (f : α → β → β) (init : β) (l : List α) : β := l.toArray.foldr f init
 
 @[csimp] theorem foldr_eq_foldrTR : @foldr = @foldrTR := by
-  funext α β f init l; simp [foldrTR, Array.foldr_eq_foldr_data, -Array.size_toArray]
+  funext α β f init l
+  rw [foldrTR, Array.foldr_eq_foldr_data]
 
 /-- Tail recursive version of `zipWith`. -/
 @[inline] def zipWithTR (f : α → β → γ) (as : List α) (bs : List β) : List γ := go as bs #[] where
