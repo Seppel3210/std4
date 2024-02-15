@@ -87,9 +87,14 @@ namespace Rat
 /-- Embedding of `Int` in the rational numbers. -/
 def ofInt (num : Int) : Rat := { num, reduced := Nat.coprime_one_right _ }
 
-instance : IntCast Rat := ⟨ofInt⟩
+instance : NatCast Rat where
+  natCast n := ofInt n
 
-instance : OfNat Rat n := ⟨n⟩
+instance : IntCast Rat where
+  intCast := ofInt
+
+instance : OfNat Rat n where
+  ofNat := n
 
 /-- Is this rational number integral? -/
 @[inline] protected def isInt (a : Rat) : Bool := a.den == 1
