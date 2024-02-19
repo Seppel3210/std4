@@ -108,7 +108,6 @@ import Std.Tactic.Relation.Symm
 import Std.Tactic.SeqFocus
 import Std.Tactic.ShowTerm
 import Std.Tactic.SimpTrace
-import Std.Tactic.Simpa
 import Std.Tactic.SolveByElim
 import Std.Tactic.SolveByElim.Backtrack
 import Std.Tactic.SqueezeScope

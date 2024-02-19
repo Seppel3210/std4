@@ -7,7 +7,6 @@ import Std.Data.Bool
 import Std.Data.BitVec.Basic
 import Std.Data.Fin.Lemmas
 import Std.Data.Nat.Lemmas
-import Std.Tactic.Simpa
 import Std.Util.ProofWanted
 
 namespace Std.BitVec
