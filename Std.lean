@@ -40,7 +40,6 @@ import Std.Data.UInt
 import Std.Lean.AttributeExtra
 import Std.Lean.CoreM
 import Std.Lean.Delaborator
-import Std.Lean.Except
 import Std.Lean.Expr
 import Std.Lean.Float
 import Std.Lean.HashMap
@@ -54,7 +53,6 @@ import Std.Lean.Meta.DiscrTree
 import Std.Lean.Meta.Expr
 import Std.Lean.Meta.Inaccessible
 import Std.Lean.Meta.InstantiateMVars
-import Std.Lean.Meta.Iterator
 import Std.Lean.Meta.LazyDiscrTree
 import Std.Lean.Meta.SavedState
 import Std.Lean.Meta.Simp
@@ -87,7 +85,6 @@ import Std.Tactic.FalseOrByContra
 import Std.Tactic.GuardMsgs
 import Std.Tactic.Init
 import Std.Tactic.Instances
-import Std.Tactic.LabelAttr
 import Std.Tactic.LibrarySearch
 import Std.Tactic.Lint
 import Std.Tactic.Lint.Basic
@@ -104,12 +101,9 @@ import Std.Tactic.PermuteGoals
 import Std.Tactic.PrintDependents
 import Std.Tactic.PrintPrefix
 import Std.Tactic.Relation.Rfl
-import Std.Tactic.Relation.Symm
 import Std.Tactic.SeqFocus
 import Std.Tactic.ShowTerm
 import Std.Tactic.SimpTrace
-import Std.Tactic.SolveByElim
-import Std.Tactic.SolveByElim.Backtrack
 import Std.Tactic.SqueezeScope
 import Std.Tactic.Unreachable
 import Std.Tactic.Where

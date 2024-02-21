@@ -3,13 +3,13 @@ Copyright (c) 2021-2023 Gabriel Ebner and Lean FRO. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Gabriel Ebner, Joe Hendrix, Scott Morrison
 -/
+import Lean.Meta.Tactic.SolveByElim
 import Lean.Meta.Tactic.TryThis
 import Std.Lean.CoreM
 import Std.Lean.Expr
 import Std.Lean.Meta.DiscrTree
 import Std.Lean.Meta.LazyDiscrTree
 import Std.Lean.Parser
-import Std.Tactic.SolveByElim
 import Std.Util.Pickle
 
 /-!
@@ -32,7 +32,7 @@ we are ready to replace the corresponding implementations in Mathlib.
 -/
 
 namespace Std.Tactic.LibrarySearch
-
+open Lean.Meta.SolveByElim
 open Lean Meta Tactic.TryThis
 
 initialize registerTraceClass `Tactic.stdLibrarySearch
@@ -366,7 +366,7 @@ def mkHeartbeatCheck (leavePercent : Nat) : MetaM (MetaM Bool) := do
 def solveByElim (required : List Expr) (exfalso : Bool) (goals : List MVarId) (maxDepth : Nat) := do
   -- There is only a marginal decrease in performance for using the `symm` option for `solveByElim`.
   -- (measured via `lake build && time lake env lean test/librarySearch.lean`).
-  let cfg : SolveByElim.Config :=
+  let cfg : SolveByElimConfig :=
     { maxDepth, exfalso := exfalso, symm := true, commitIndependentGoals := true,
       transparency := ← getTransparency,
       -- `constructor` has been observed to significantly slow down `exact?` in Mathlib.

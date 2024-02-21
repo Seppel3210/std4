@@ -5,7 +5,8 @@ Authors: Mario Carneiro
 -/
 import Lean.Elab.Tactic.Simp
 import Lean.Meta.Tactic.TryThis
-import Std.Tactic.SimpTrace
+import Lean.Elab.Tactic.SimpTrace
+
 
 /-!
 # `squeeze_scope` tactic

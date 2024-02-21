@@ -1,4 +1,4 @@
-import Std.Tactic.Relation.Symm
+--import Lean.Meta.Tactic.Symm
 
 set_option autoImplicit true
 set_option linter.missingDocs false

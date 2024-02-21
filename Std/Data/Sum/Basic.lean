@@ -40,9 +40,6 @@ universe signature in consequence. The `Prop` version is `Or`.
 
 namespace Sum
 
-deriving instance DecidableEq for Sum
-deriving instance BEq for Sum
-
 section get
 
 /-- Check if a sum is `inl`. -/
@@ -62,16 +59,6 @@ def getLeft : (ab : α ⊕ β) → ab.isLeft → α
 /-- Retrieve the contents from a sum known to be `inr`.-/
 def getRight : (ab : α ⊕ β) → ab.isRight → β
   | inr b, _ => b
-
-/-- Check if a sum is `inl` and if so, retrieve its contents. -/
-def getLeft? : α ⊕ β → Option α
-  | inl a => some a
-  | inr _ => none
-
-/-- Check if a sum is `inr` and if so, retrieve its contents. -/
-def getRight? : α ⊕ β → Option β
-  | inr b => some b
-  | inl _ => none
 
 @[simp] theorem isLeft_inl : (inl x : α ⊕ β).isLeft = true := rfl
 @[simp] theorem isLeft_inr : (inr x : α ⊕ β).isLeft = false := rfl

@@ -3,7 +3,7 @@ import Std.Tactic.GuardMsgs
 
 set_option linter.missingDocs false
 
-open Std.Tactic.LabelAttr
+open Lean (labelled)
 
 def f := 0
 
