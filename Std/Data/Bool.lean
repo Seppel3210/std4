@@ -4,6 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: F. G. Dorais
 -/
 
+import Std.Base.Bool
 import Std.Tactic.Alias
 
 /-- Boolean exclusive or -/
@@ -16,18 +17,6 @@ namespace Bool
 @[inherit_doc or]  protected abbrev or  := or
 @[inherit_doc and] protected abbrev and := and
 @[inherit_doc xor] protected abbrev xor := xor
-
-instance (p : Bool → Prop) [inst : DecidablePred p] : Decidable (∀ x, p x) :=
-  match inst true, inst false with
-  | isFalse ht, _ => isFalse fun h => absurd (h _) ht
-  | _, isFalse hf => isFalse fun h => absurd (h _) hf
-  | isTrue ht, isTrue hf => isTrue fun | true => ht | false => hf
-
-instance (p : Bool → Prop) [inst : DecidablePred p] : Decidable (∃ x, p x) :=
-  match inst true, inst false with
-  | isTrue ht, _ => isTrue ⟨_, ht⟩
-  | _, isTrue hf => isTrue ⟨_, hf⟩
-  | isFalse ht, isFalse hf => isFalse fun | ⟨true, h⟩ => absurd h ht | ⟨false, h⟩ => absurd h hf
 
 instance : LE Bool := ⟨(. → .)⟩
 instance : LT Bool := ⟨(!. && .)⟩
@@ -47,10 +36,6 @@ theorem eq_false_iff : {b : Bool} → b = false ↔ b ≠ true := by decide
 theorem ne_false_iff : {b : Bool} → b ≠ false ↔ b = true := by decide
 
 /-! ### and -/
-
-@[simp] theorem not_and_self : ∀ (x : Bool), (!x && x) = false := by decide
-
-@[simp] theorem and_not_self : ∀ (x : Bool), (x && !x) = false := by decide
 
 theorem and_comm : ∀ (x y : Bool), (x && y) = (y && x) := by decide
 
@@ -78,10 +63,6 @@ theorem and_eq_false_iff : ∀ (x y : Bool), (x && y) = false ↔ x = false ∨ 
 
 /-! ### or -/
 
-@[simp] theorem not_or_self : ∀ (x : Bool), (!x || x) = true := by decide
-
-@[simp] theorem or_not_self : ∀ (x : Bool), (x || !x) = true := by decide
-
 theorem or_comm : ∀ (x y : Bool), (x || y) = (y || x) := by decide
 
 theorem or_left_comm : ∀ (x y z : Bool), (x || (y || z)) = (y || (x || z)) := by decide
@@ -103,23 +84,31 @@ theorem or_eq_false_iff : ∀ (x y : Bool), (x || y) = false ↔ x = false ∧ y
 
 /-! ### xor -/
 
-@[simp] theorem false_xor : ∀ (x : Bool), xor false x = x := by decide
+@[deprecated false_bne]
+theorem false_xor : ∀ (x : Bool), xor false x = x := false_bne
 
-@[simp] theorem xor_false : ∀ (x : Bool), xor x false = x := by decide
+@[deprecated bne_false]
+theorem xor_false : ∀ (x : Bool), xor x false = x := bne_false
 
-@[simp] theorem true_xor : ∀ (x : Bool), xor true x = !x := by decide
+@[deprecated true_bne]
+theorem true_xor : ∀ (x : Bool), xor true x = !x := true_bne
 
-@[simp] theorem xor_true : ∀ (x : Bool), xor x true = !x := by decide
+@[deprecated bne_true]
+theorem xor_true : ∀ (x : Bool), xor x true = !x := bne_true
 
-@[simp] theorem not_xor_self : ∀ (x : Bool), xor (!x) x = true := by decide
+@[deprecated not_bne_self]
+theorem not_xor_self : ∀ (x : Bool), xor (!x) x = true := not_bne_self
 
-@[simp] theorem xor_not_self : ∀ (x : Bool), xor x (!x) = true := by decide
+@[deprecated bne_not_self]
+theorem xor_not_self : ∀ (x : Bool), xor x (!x) = true := bne_not_self
 
 theorem not_xor : ∀ (x y : Bool), xor (!x) y = !(xor x y) := by decide
 
 theorem xor_not : ∀ (x y : Bool), xor x (!y) = !(xor x y) := by decide
 
-@[simp] theorem not_xor_not : ∀ (x y : Bool), xor (!x) (!y) = (xor x y) := by decide
+
+@[deprecated not_bne_not]
+theorem not_xor_not : ∀ (x y : Bool), xor (!x) (!y) = (xor x y) := not_bne_not
 
 theorem xor_self : ∀ (x : Bool), xor x x = false := by decide
 
@@ -129,13 +118,14 @@ theorem xor_left_comm : ∀ (x y z : Bool), xor x (xor y z) = xor y (xor x z) :=
 
 theorem xor_right_comm : ∀ (x y z : Bool), xor (xor x y) z = xor (xor x z) y := by decide
 
-theorem xor_assoc : ∀ (x y z : Bool), xor (xor x y) z = xor x (xor y z) := by decide
+@[deprecated bne_assoc]
+theorem xor_assoc : ∀ (x y z : Bool), xor (xor x y) z = xor x (xor y z) := bne_assoc
 
-@[simp]
-theorem xor_left_inj : ∀ (x y z : Bool), xor x y = xor x z ↔ y = z := by decide
+@[deprecated bne_left_inj]
+theorem xor_left_inj : ∀ (x y z : Bool), xor x y = xor x z ↔ y = z := bne_left_inj
 
-@[simp]
-theorem xor_right_inj : ∀ (x y z : Bool), xor x z = xor y z ↔ x = y := by decide
+@[deprecated bne_right_inj]
+theorem xor_right_inj : ∀ (x y z : Bool), xor x z = xor y z ↔ x = y := bne_right_inj
 
 /-! ### le/lt -/
 

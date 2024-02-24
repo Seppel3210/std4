@@ -3,6 +3,7 @@ Copyright (c) 2014 Microsoft Corporation. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Leonardo de Moura, Jeremy Avigad, Floris van Doorn, Mario Carneiro
 -/
+import Std.Base.Logic
 import Std.Tactic.Init
 import Std.Tactic.NoMatch
 import Std.Tactic.Alias
@@ -55,13 +56,9 @@ theorem neq_of_not_iff : ¬(a ↔ b) → a ≠ b := mt Eq.to_iff
 
 theorem iff_iff_eq : (a ↔ b) ↔ a = b := ⟨propext, iff_of_eq⟩
 
-@[simp] theorem eq_iff_iff {p q : Prop} : (p = q) ↔ (p ↔ q) := iff_iff_eq.symm
-
 theorem of_iff_true (h : a ↔ True) : a := h.2 ⟨⟩
 
 theorem not_of_iff_false : (a ↔ False) → ¬a := Iff.mp
-
-theorem iff_of_true (ha : a) (hb : b) : a ↔ b := ⟨fun _ => hb, fun _ => ha⟩
 
 theorem iff_of_false (ha : ¬a) (hb : ¬b) : a ↔ b := ⟨ha.elim, hb.elim⟩
 
@@ -72,8 +69,6 @@ theorem iff_true_right (ha : a) : (b ↔ a) ↔ b := Iff.comm.trans (iff_true_le
 theorem iff_false_left (ha : ¬a) : (a ↔ b) ↔ ¬b := ⟨fun h => mt h.2 ha, iff_of_false ha⟩
 
 theorem iff_false_right (ha : ¬a) : (b ↔ a) ↔ ¬b := Iff.comm.trans (iff_false_left ha)
-
-theorem iff_true_intro (h : a) : a ↔ True := iff_of_true h ⟨⟩
 
 theorem iff_false_intro (h : ¬a) : a ↔ False := iff_of_false h id
 
@@ -110,23 +105,11 @@ theorem eq_comm {a b : α} : a = b ↔ b = a := ⟨Eq.symm, Eq.symm⟩
 
 /-! ## implies -/
 
-@[nolint unusedArguments]
-theorem imp_intro {α β : Prop} (h : α) : β → α := fun _ => h
 
 theorem imp_imp_imp {a b c d : Prop} (h₀ : c → a) (h₁ : b → d) : (a → b) → (c → d) := (h₁ ∘ · ∘ h₀)
 
-theorem imp_iff_right {a : Prop} (ha : a) : (a → b) ↔ b := ⟨fun f => f ha, imp_intro⟩
-
 -- This is not marked `@[simp]` because we have `implies_true : (α → True) = True` in core.
 theorem imp_true_iff (α : Sort u) : (α → True) ↔ True := iff_true_intro fun _ => trivial
-
-theorem false_imp_iff (a : Prop) : (False → a) ↔ True := iff_true_intro False.elim
-
-theorem true_imp_iff (α : Prop) : (True → α) ↔ α := ⟨fun h => h trivial, fun h _ => h⟩
-
-@[simp] theorem imp_self : (a → a) ↔ True := iff_true_intro id
-
-theorem imp_false : (a → False) ↔ ¬a := Iff.rfl
 
 theorem imp.swap : (a → b → c) ↔ (b → a → c) := ⟨flip, flip⟩
 
@@ -230,19 +213,9 @@ theorem and_iff_right (ha : a) : a ∧ b ↔ b := and_iff_right_of_imp fun _ => 
 @[simp] theorem and_congr_left_iff : (a ∧ c ↔ b ∧ c) ↔ c → (a ↔ b) := by
   simp only [and_comm, ← and_congr_right_iff]
 
-@[simp] theorem and_self_left : a ∧ a ∧ b ↔ a ∧ b :=
-  ⟨fun h => ⟨h.1, h.2.2⟩, fun h => ⟨h.1, h.1, h.2⟩⟩
-
-@[simp] theorem and_self_right : (a ∧ b) ∧ b ↔ a ∧ b :=
-  ⟨fun h => ⟨h.1.1, h.2⟩, fun h => ⟨⟨h.1, h.2⟩, h.2⟩⟩
-
 theorem not_and_of_not_left (b : Prop) : ¬a → ¬(a ∧ b) := mt And.left
 
 theorem not_and_of_not_right (a : Prop) {b : Prop} : ¬b → ¬(a ∧ b) := mt And.right
-
-@[simp] theorem and_not_self : ¬(a ∧ ¬a) | ⟨ha, hn⟩ => hn ha
-
-@[simp] theorem not_and_self : ¬(¬a ∧ a) | ⟨hn, ha⟩ => hn ha
 
 theorem and_not_self_iff (a : Prop) : a ∧ ¬a ↔ False := iff_false_intro and_not_self
 
@@ -256,12 +229,6 @@ theorem not_not_em (a : Prop) : ¬¬(a ∨ ¬a) := fun h => h (.inr (h ∘ .inl)
 theorem or_self_iff : a ∨ a ↔ a := or_self _ ▸ .rfl
 
 theorem Or.symm : a ∨ b → b ∨ a := .rec .inr .inl
-
-theorem Or.imp (f : a → c) (g : b → d) (h : a ∨ b) : c ∨ d := h.elim (inl ∘ f) (inr ∘ g)
-
-theorem Or.imp_left (f : a → b) : a ∨ c → b ∨ c := .imp f id
-
-theorem Or.imp_right (f : b → c) : a ∨ b → a ∨ c := .imp id f
 
 theorem or_congr (h₁ : a ↔ c) (h₂ : b ↔ d) : (a ∨ b) ↔ (c ∨ d) := ⟨.imp h₁.1 h₂.1, .imp h₁.2 h₂.2⟩
 
@@ -321,10 +288,6 @@ theorem not_imp_of_and_not : a ∧ ¬b → ¬(a → b)
 theorem imp_and {α} : (α → b ∧ c) ↔ (α → b) ∧ (α → c) :=
   ⟨fun h => ⟨fun ha => (h ha).1, fun ha => (h ha).2⟩, fun h ha => ⟨h.1 ha, h.2 ha⟩⟩
 
-@[simp] theorem and_imp : (a ∧ b → c) ↔ (a → b → c) :=
-  ⟨fun h ha hb => h ⟨ha, hb⟩, fun h ⟨ha, hb⟩ => h ha hb⟩
-
-@[simp] theorem not_and : ¬(a ∧ b) ↔ (a → ¬b) := and_imp
 
 theorem not_and' : ¬(a ∧ b) ↔ b → ¬a := not_and.trans imp_not_comm
 
@@ -351,10 +314,6 @@ theorem or_imp : (a ∨ b → c) ↔ (a → c) ∧ (b → c) :=
 theorem not_or : ¬(p ∨ q) ↔ ¬p ∧ ¬q := or_imp
 
 theorem not_and_of_not_or_not (h : ¬a ∨ ¬b) : ¬(a ∧ b) := h.elim (mt (·.1)) (mt (·.2))
-
-@[simp] theorem or_self_left : a ∨ a ∨ b ↔ a ∨ b := ⟨.rec .inl id, .rec .inl (.inr ∘ .inr)⟩
-
-@[simp] theorem or_self_right : (a ∨ b) ∨ b ↔ a ∨ b := ⟨.rec id .inr, .rec (.inl ∘ .inl) .inr⟩
 
 /-! ## exists and forall -/
 
@@ -455,9 +414,6 @@ theorem Exists.nonempty : (∃ x, p x) → Nonempty α | ⟨x, _⟩ => ⟨x⟩
 /-- Show that an element extracted from `P : ∃ a, p a` using `P.choose` satisfies `p`. -/
 theorem Exists.choose_spec {p : α → Prop} (P : ∃ a, p a) : p P.choose := Classical.choose_spec P
 
-theorem not_forall_of_exists_not {p : α → Prop} : (∃ x, ¬p x) → ¬∀ x, p x
-  | ⟨x, hn⟩, h => hn (h x)
-
 @[simp] theorem forall_eq {p : α → Prop} {a' : α} : (∀ a, a = a' → p a) ↔ p a' :=
   ⟨fun h => h a' rfl, fun h _ e => e.symm ▸ h⟩
 
@@ -524,8 +480,6 @@ end quantifiers
 
 /-! ## decidable -/
 
-theorem Decidable.not_not [Decidable p] : ¬¬p ↔ p := ⟨of_not_not, not_not_intro⟩
-
 theorem Decidable.by_contra [Decidable p] : (¬p → False) → p := of_not_not
 
 /-- Construct a non-Prop by cases on an `Or`, when the left conjunct is decidable. -/
@@ -548,20 +502,8 @@ if h : p then
   decidable_of_decidable_of_iff ⟨fun h2 _ => h2, fun al => al h⟩
 else isTrue fun h2 => absurd h2 h
 
-theorem decide_eq_true_iff (p : Prop) [Decidable p] : (decide p = true) ↔ p := by simp
-
-@[simp] theorem decide_eq_false_iff_not (p : Prop) {_ : Decidable p} : (decide p = false) ↔ ¬p :=
-  ⟨of_decide_eq_false, decide_eq_false⟩
-
-@[simp] theorem decide_eq_decide {p q : Prop} {_ : Decidable p} {_ : Decidable q} :
-    decide p = decide q ↔ (p ↔ q) :=
-  ⟨fun h => by rw [← decide_eq_true_iff p, h, decide_eq_true_iff], fun h => by simp [h]⟩
-
 theorem Decidable.of_not_imp [Decidable a] (h : ¬(a → b)) : a :=
   byContradiction (not_not_of_not_imp h)
-
-theorem Decidable.not_imp_symm [Decidable a] (h : ¬a → b) (hb : ¬b) : a :=
-  byContradiction <| hb ∘ h
 
 theorem Decidable.not_imp_comm [Decidable a] [Decidable b] : (¬a → b) ↔ (¬b → a) :=
   ⟨not_imp_symm, not_imp_symm⟩
@@ -638,14 +580,6 @@ theorem Decidable.or_iff_not_and_not [Decidable a] [Decidable b] : a ∨ b ↔ �
 theorem Decidable.and_iff_not_or_not [Decidable a] [Decidable b] : a ∧ b ↔ ¬(¬a ∨ ¬b) := by
   rw [← not_and_iff_or_not_not, not_not]
 
-theorem Decidable.imp_iff_right_iff [Decidable a] : (a → b ↔ b) ↔ a ∨ b :=
-  ⟨fun H => (Decidable.em a).imp_right fun ha' => H.1 fun ha => (ha' ha).elim,
-   fun H => H.elim imp_iff_right fun hb => iff_of_true (fun _ => hb) hb⟩
-
-theorem Decidable.and_or_imp [Decidable a] : a ∧ b ∨ (a → c) ↔ a → b ∨ c :=
-  if ha : a then by simp only [ha, true_and, true_imp_iff]
-  else by simp only [ha, false_or, false_and, false_imp_iff]
-
 theorem Decidable.or_congr_left' [Decidable c] (h : ¬c → (a ↔ b)) : a ∨ c ↔ b ∨ c := by
   rw [or_iff_not_imp_right, or_iff_not_imp_right]; exact imp_congr_right h
 
@@ -673,11 +607,6 @@ def decidable_of_bool : ∀ (b : Bool), (b ↔ a) → Decidable a
   | true, h => isTrue (h.1 rfl)
   | false, h => isFalse (mt h.2 Bool.noConfusion)
 
-protected theorem Decidable.not_forall {p : α → Prop} [Decidable (∃ x, ¬p x)]
-    [∀ x, Decidable (p x)] : (¬∀ x, p x) ↔ ∃ x, ¬p x :=
-  ⟨Decidable.not_imp_symm fun nx x => Decidable.not_imp_symm (fun h => ⟨x, h⟩) nx,
-   not_forall_of_exists_not⟩
-
 protected alias ⟨Decidable.exists_not_of_not_forall, _⟩ := Decidable.not_forall
 
 protected theorem Decidable.not_forall_not {p : α → Prop} [Decidable (∃ x, p x)] :
@@ -691,14 +620,6 @@ protected theorem Decidable.not_exists_not {p : α → Prop} [∀ x, Decidable (
 /-! ## classical logic -/
 
 namespace Classical
-
-/-- The Double Negation Theorem: `¬¬P` is equivalent to `P`.
-The left-to-right direction, double negation elimination (DNE),
-is classically true but not constructively. -/
-@[scoped simp] theorem not_not : ¬¬a ↔ a := Decidable.not_not
-
-@[simp] theorem not_forall {p : α → Prop} : (¬∀ x, p x) ↔ ∃ x, ¬p x :=
-  Decidable.not_forall
 
 alias ⟨exists_not_of_not_forall, _⟩ := not_forall
 
@@ -844,15 +765,6 @@ theorem apply_ite (f : α → β) (P : Prop) [Decidable P] (x y : α) :
     f (ite P x y) = ite P (f x) (f y) :=
   apply_dite f P (fun _ => x) (fun _ => y)
 
-/-- Negation of the condition `P : Prop` in a `dite` is the same as swapping the branches. -/
-@[simp] theorem dite_not (P : Prop) {_ : Decidable P}  (x : ¬P → α) (y : ¬¬P → α) :
-    dite (¬P) x y = dite P (fun h => y (not_not_intro h)) x := by
-  by_cases h : P <;> simp [h]
-
-/-- Negation of the condition `P : Prop` in a `ite` is the same as swapping the branches. -/
-@[simp] theorem ite_not (P : Prop) {_ : Decidable P} (x y : α) : ite (¬P) x y = ite P y x :=
-  dite_not P (fun _ => x) (fun _ => y)
-
 @[simp] theorem dite_eq_left_iff {P : Prop} [Decidable P] {B : ¬ P → α} :
     dite P (fun _ => a) B = a ↔ ∀ h, B h = a := by
   by_cases P <;> simp [*, forall_prop_of_true, forall_prop_of_false]
@@ -869,15 +781,6 @@ theorem apply_ite (f : α → β) (P : Prop) [Decidable P] (x y : α) :
 
 /-- A `dite` whose results do not actually depend on the condition may be reduced to an `ite`. -/
 @[simp] theorem dite_eq_ite [Decidable P] : (dite P (fun _ => a) fun _ => b) = ite P a b := rfl
-
--- We don't mark this as `simp` as it is already handled by `ite_eq_right_iff`.
-theorem ite_some_none_eq_none [Decidable P] :
-    (if P then some x else none) = none ↔ ¬ P := by
-  simp only [ite_eq_right_iff]
-
-@[simp] theorem ite_some_none_eq_some [Decidable P] :
-    (if P then some x else none) = some y ↔ P ∧ x = y := by
-  split <;> simp_all
 
 /-! ## miscellaneous -/
 
