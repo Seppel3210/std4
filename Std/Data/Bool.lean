@@ -54,13 +54,6 @@ theorem and_xor_distrib_left : ∀ (x y z : Bool), (x && xor y z) = xor (x && y)
 theorem and_xor_distrib_right : ∀ (x y z : Bool), (xor x y && z) = xor (x && z) (y && z) := by
   decide
 
-/-- De Morgan's law for boolean and -/
-theorem not_and : ∀ (x y : Bool), (!(x && y)) = (!x || !y) := by decide
-
-theorem and_eq_true_iff : ∀ (x y : Bool), (x && y) = true ↔ x = true ∧ y = true := by decide
-
-theorem and_eq_false_iff : ∀ (x y : Bool), (x && y) = false ↔ x = false ∨ y = false := by decide
-
 /-! ### or -/
 
 theorem or_comm : ∀ (x y : Bool), (x || y) = (y || x) := by decide
@@ -74,13 +67,6 @@ theorem or_and_distrib_left : ∀ (x y z : Bool), (x || (y && z)) = ((x || y) &&
 
 theorem or_and_distrib_right : ∀ (x y z : Bool), ((x && y) || z) = ((x || z) && (y || z)) := by
   decide
-
-/-- De Morgan's law for boolean or -/
-theorem not_or : ∀ (x y : Bool), (!(x || y)) = (!x && !y) := by decide
-
-theorem or_eq_true_iff : ∀ (x y : Bool), (x || y) = true ↔ x = true ∨ y = true := by decide
-
-theorem or_eq_false_iff : ∀ (x y : Bool), (x || y) = false ↔ x = false ∧ y = false := by decide
 
 /-! ### xor -/
 
@@ -110,7 +96,7 @@ theorem xor_not : ∀ (x y : Bool), xor x (!y) = !(xor x y) := by decide
 @[deprecated not_bne_not]
 theorem not_xor_not : ∀ (x y : Bool), xor (!x) (!y) = (xor x y) := not_bne_not
 
-theorem xor_self : ∀ (x : Bool), xor x x = false := by decide
+theorem xor_self : ∀ (x : Bool), xor x x = false := bne_self_eq_false
 
 theorem xor_comm : ∀ (x y : Bool), xor x y = xor y x := by decide
 

@@ -66,7 +66,13 @@ theorem mem_cons_self (a : α) (l : List α) : a ∈ a :: l := .head ..
 theorem mem_cons_of_mem (y : α) {a : α} {l : List α} : a ∈ l → a ∈ y :: l := .tail _
 
 theorem eq_nil_iff_forall_not_mem {l : List α} : l = [] ↔ ∀ a, a ∉ l := by
-  cases l <;> simp
+  match l with
+  | [] => simp
+  | h::r =>
+    simp only [false_iff]
+    intro p
+    have q := p h
+    simp at q
 
 /-! ### append -/
 

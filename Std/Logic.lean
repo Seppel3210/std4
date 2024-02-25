@@ -33,8 +33,6 @@ theorem not_not_of_not_imp : ¬(a → b) → ¬¬a := mt Not.elim
 
 theorem not_of_not_imp {a : Prop} : ¬(a → b) → ¬b := mt fun h _ => h
 
-@[simp] theorem imp_not_self : (a → ¬a) ↔ ¬a := ⟨fun h ha => h ha ha, fun h _ => h⟩
-
 /-! ## iff -/
 
 -- This is needed for `calc` to work with `iff`.
@@ -86,10 +84,6 @@ theorem ne_self_iff_false (a : α) : a ≠ a ↔ False := not_iff_false_intro rf
 theorem eq_self_iff_true (a : α) : a = a ↔ True := iff_true_intro rfl
 
 theorem heq_self_iff_true (a : α) : HEq a a ↔ True := iff_true_intro HEq.rfl
-
-theorem iff_not_self : ¬(a ↔ ¬a) | H => let f h := H.1 h h; f (H.2 f)
-
-@[simp] theorem not_iff_self : ¬(¬a ↔ a) | H => iff_not_self H.symm
 
 theorem true_iff_false : (True ↔ False) ↔ False := iff_false_intro (fun h => h.1 ⟨⟩)
 
@@ -147,14 +141,6 @@ theorem And.imp_right (h : a → b) : c ∧ a → c ∧ b := .imp id h
 theorem and_congr (h₁ : a ↔ c) (h₂ : b ↔ d) : a ∧ b ↔ c ∧ d :=
   ⟨And.imp h₁.1 h₂.1, And.imp h₁.2 h₂.2⟩
 
-theorem and_comm : a ∧ b ↔ b ∧ a := And.comm
-
-theorem and_congr_right (h : a → (b ↔ c)) : a ∧ b ↔ a ∧ c :=
-⟨fun ⟨ha, hb⟩ => ⟨ha, (h ha).1 hb⟩, fun ⟨ha, hb⟩ => ⟨ha, (h ha).2 hb⟩⟩
-
-theorem and_congr_left (h : c → (a ↔ b)) : a ∧ c ↔ b ∧ c :=
-  and_comm.trans <| (and_congr_right h).trans and_comm
-
 theorem and_congr_left' (h : a ↔ b) : a ∧ c ↔ b ∧ c := and_congr h .rfl
 
 theorem and_congr_right' (h : b ↔ c) : a ∧ b ↔ a ∧ c := and_congr .rfl h
@@ -186,32 +172,9 @@ theorem and_and_left : a ∧ b ∧ c ↔ (a ∧ b) ∧ a ∧ c := by
 theorem and_and_right : (a ∧ b) ∧ c ↔ (a ∧ c) ∧ b ∧ c := by
   rw [and_and_and_comm, and_self]
 
-theorem and_iff_left_of_imp (h : a → b) : (a ∧ b) ↔ a :=
-  ⟨And.left, fun ha => ⟨ha, h ha⟩⟩
-
-theorem and_iff_right_of_imp (h : b → a) : (a ∧ b) ↔ b :=
-  ⟨And.right, fun hb => ⟨h hb, hb⟩⟩
-
 theorem and_iff_left (hb : b) : a ∧ b ↔ a := and_iff_left_of_imp fun _ => hb
 
 theorem and_iff_right (ha : a) : a ∧ b ↔ b := and_iff_right_of_imp fun _ => ha
-
-@[simp] theorem and_iff_left_iff_imp : ((a ∧ b) ↔ a) ↔ (a → b) :=
-  ⟨fun h ha => (h.2 ha).2, and_iff_left_of_imp⟩
-
-@[simp] theorem and_iff_right_iff_imp : ((a ∧ b) ↔ b) ↔ (b → a) :=
-  ⟨fun h ha => (h.2 ha).1, and_iff_right_of_imp⟩
-
-@[simp] theorem iff_self_and : (p ↔ p ∧ q) ↔ (p → q) := by
-  rw [@Iff.comm p, and_iff_left_iff_imp]
-
-@[simp] theorem iff_and_self : (p ↔ q ∧ p) ↔ (p → q) := by rw [and_comm, iff_self_and]
-
-@[simp] theorem and_congr_right_iff : (a ∧ b ↔ a ∧ c) ↔ (a → (b ↔ c)) :=
-  ⟨fun h ha => by simp [ha] at h; exact h, and_congr_right⟩
-
-@[simp] theorem and_congr_left_iff : (a ∧ c ↔ b ∧ c) ↔ c → (a ↔ b) := by
-  simp only [and_comm, ← and_congr_right_iff]
 
 theorem not_and_of_not_left (b : Prop) : ¬a → ¬(a ∧ b) := mt And.left
 
@@ -307,11 +270,6 @@ theorem or_and_left : a ∨ (b ∧ c) ↔ (a ∨ b) ∧ (a ∨ c) :=
 /-- `∨` distributes over `∧` (on the right). -/
 theorem and_or_right : (a ∧ b) ∨ c ↔ (a ∨ c) ∧ (b ∨ c) := by
   simp [or_comm, or_and_left]
-
-theorem or_imp : (a ∨ b → c) ↔ (a → c) ∧ (b → c) :=
-  ⟨fun h => ⟨h ∘ .inl, h ∘ .inr⟩, fun ⟨ha, hb⟩ => Or.rec ha hb⟩
-
-theorem not_or : ¬(p ∨ q) ↔ ¬p ∧ ¬q := or_imp
 
 theorem not_and_of_not_or_not (h : ¬a ∨ ¬b) : ¬(a ∧ b) := h.elim (mt (·.1)) (mt (·.2))
 
@@ -489,18 +447,6 @@ protected def Or.by_cases [Decidable p] {α : Sort u} (h : p ∨ q) (h₁ : p �
 /-- Construct a non-Prop by cases on an `Or`, when the right conjunct is decidable. -/
 protected def Or.by_cases' [Decidable q] {α : Sort u} (h : p ∨ q) (h₁ : p → α) (h₂ : q → α) : α :=
   if hq : q then h₂ hq else h₁ (h.resolve_right hq)
-
-instance exists_prop_decidable {p} (P : p → Prop)
-  [Decidable p] [∀ h, Decidable (P h)] : Decidable (∃ h, P h) :=
-if h : p then
-  decidable_of_decidable_of_iff ⟨fun h2 => ⟨h, h2⟩, fun ⟨_, h2⟩ => h2⟩
-else isFalse fun ⟨h', _⟩ => h h'
-
-instance forall_prop_decidable {p} (P : p → Prop)
-  [Decidable p] [∀ h, Decidable (P h)] : Decidable (∀ h, P h) :=
-if h : p then
-  decidable_of_decidable_of_iff ⟨fun h2 _ => h2, fun al => al h⟩
-else isTrue fun h2 => absurd h2 h
 
 theorem Decidable.of_not_imp [Decidable a] (h : ¬(a → b)) : a :=
   byContradiction (not_not_of_not_imp h)

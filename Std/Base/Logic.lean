@@ -5,72 +5,149 @@ Authors: Leonardo de Moura, Jeremy Avigad, Floris van Doorn, Mario Carneiro
 -/
 import Std.Tactic.Lint.Misc
 
+/- Defined in core; made simp in Mathlib-/
 attribute [simp] cast_eq cast_heq
 
 /-# iff -/
 
+/- simp rule in std-/
 @[simp] theorem eq_iff_iff {p q : Prop} : (p = q) ↔ (p ↔ q) :=
-  Iff.intro (fun e => Iff.intro e.mp e.mpr) propext
+  Iff.intro Iff.of_eq  propext
 
 theorem iff_of_true (ha : a) (hb : b) : a ↔ b := ⟨fun _ => hb, fun _ => ha⟩
 
 theorem iff_true_intro (h : a) : a ↔ True := iff_of_true h ⟨⟩
 
+/-# implication -/
+
+/- simp rule in std-/
+@[simp] theorem imp_self : (a → a) ↔ True := iff_true_intro id
+
+/- simp rule in std-/
+@[simp] theorem imp_not_self : (a → ¬a) ↔ ¬a := ⟨fun h ha => h ha ha, fun h _ => h⟩
+
+/- non-simp rule in std; made simp in Mathlib. -/
+@[simp] theorem imp_false : (a → False) ↔ ¬a := Iff.rfl
+
 /-# and -/
 
+/- simp rule in std-/
 @[simp] theorem and_imp : (a ∧ b → c) ↔ (a → b → c) :=
   Iff.intro (fun h ha hb => h ⟨ha, hb⟩) (fun h ⟨ha, hb⟩ => h ha hb)
 
+/- simp rule in std -/
 @[simp] theorem not_and : ¬(a ∧ b) ↔ (a → ¬b) := and_imp
 
+/- simp rule in std -/
 @[simp]
 theorem and_not_self : ¬(a ∧ ¬a) | ⟨ha, hn⟩ => hn ha
 
+/- simp rule in std -/
 @[simp]
 theorem not_and_self : ¬(¬a ∧ a) | ⟨hn, ha⟩ => hn ha
 
+/- simp rule in std -/
 @[simp] theorem and_self_left : a ∧ (a ∧ b) ↔ a ∧ b :=
   ⟨fun h => ⟨h.1, h.2.2⟩, fun h => ⟨h.1, h.1, h.2⟩⟩
 
+/- simp rule in std -/
 @[simp] theorem and_self_right : (a ∧ b) ∧ b ↔ a ∧ b :=
   ⟨fun h => ⟨h.1.1, h.2⟩, fun h => ⟨⟨h.1, h.2⟩, h.2⟩⟩
 
+theorem and_comm : a ∧ b ↔ b ∧ a := And.comm
+
 /-# or -/
 
+theorem or_imp : (a ∨ b → c) ↔ (a → c) ∧ (b → c) :=
+  ⟨fun h => ⟨h ∘ .inl, h ∘ .inr⟩, fun ⟨ha, hb⟩ => Or.rec ha hb⟩
+
+--
+theorem not_or : ¬(p ∨ q) ↔ ¬p ∧ ¬q := or_imp
+
+/- simp rule in std -/
 @[simp] theorem or_self_left : a ∨ (a ∨ b) ↔ a ∨ b := ⟨.rec .inl id, .rec .inl (.inr ∘ .inr)⟩
 
+/- simp rule in std -/
 @[simp] theorem or_self_right : (a ∨ b) ∨ b ↔ a ∨ b := ⟨.rec id .inr, .rec (.inl ∘ .inl) .inr⟩
-
-/-# implication -/
-
-@[simp] theorem imp_self : (a → a) ↔ True := iff_true_intro id
-
-@[simp] theorem imp_false : (a → False) ↔ ¬a := Iff.rfl
 
 /-# ite -/
 
 /-- Negation of the condition `P : Prop` in a `dite` is the same as swapping the branches. -/
+/- simp rule in std -/
 @[simp] theorem dite_not (P : Prop) {_ : Decidable P}  (x : ¬P → α) (y : ¬¬P → α) :
     dite (¬P) x y = dite P (fun h => y (not_not_intro h)) x := by
   by_cases h : P <;> simp [h]
 
 /-- Negation of the condition `P : Prop` in a `ite` is the same as swapping the branches. -/
+/- simp rule in std -/
 @[simp] theorem ite_not (P : Prop) {_ : Decidable P} (x y : α) : ite (¬P) x y = ite P y x :=
   dite_not P (fun _ => x) (fun _ => y)
 
+/- New simp rule -/
 @[simp] theorem ite_true_same (p q : Prop) [Decidable p] : (if p then p else q) = (p ∨ q) := by
   by_cases h : p <;> simp [h]
 
+/- New simp rule -/
 @[simp] theorem ite_false_same (p q : Prop) [Decidable p] : (if p then q else p) = (p ∧ q) := by
   by_cases h : p <;> simp [h]
 
+/- in std (not simp)  -/
+theorem iff_not_self : ¬(a ↔ ¬a) | H => let f h := H.1 h h; f (H.2 f)
+
+/- simp rule in std -/
+@[simp] theorem not_iff_self : ¬(¬a ↔ a) | H => iff_not_self H.symm
+
+theorem and_iff_left_of_imp (h : a → b) : (a ∧ b) ↔ a :=
+  ⟨And.left, fun ha => ⟨ha, h ha⟩⟩
+
+theorem and_iff_right_of_imp (h : b → a) : (a ∧ b) ↔ b :=
+  ⟨And.right, fun hb => ⟨h hb, hb⟩⟩
+
+/- simp rule in std -/
+@[simp] theorem and_iff_left_iff_imp : ((a ∧ b) ↔ a) ↔ (a → b) :=
+  ⟨fun h ha => (h.2 ha).2, and_iff_left_of_imp⟩
+
+/- simp rule in std -/
+@[simp] theorem and_iff_right_iff_imp : ((a ∧ b) ↔ b) ↔ (b → a) :=
+  ⟨fun h ha => (h.2 ha).1, and_iff_right_of_imp⟩
+
+/- simp rule in std -/
+@[simp] theorem iff_self_and : (p ↔ p ∧ q) ↔ (p → q) := by
+  rw [@Iff.comm p, and_iff_left_iff_imp]
+  exact Iff.refl _
+
+/- simp rule in std -/
+@[simp] theorem iff_and_self : (p ↔ q ∧ p) ↔ (p → q) := by
+  rw [and_comm, iff_self_and]
+  exact Iff.refl _
+
+theorem and_congr_right (h : a → (b ↔ c)) : a ∧ b ↔ a ∧ c :=
+  ⟨fun ⟨ha, hb⟩ => ⟨ha, (h ha).1 hb⟩, fun ⟨ha, hb⟩ => ⟨ha, (h ha).2 hb⟩⟩
+
+theorem and_congr_left (h : c → (a ↔ b)) : a ∧ c ↔ b ∧ c :=
+  and_comm.trans <| (and_congr_right h).trans and_comm
+
+/- simp rule in std -/
+@[simp] theorem and_congr_right_iff : (a ∧ b ↔ a ∧ c) ↔ (a → (b ↔ c)) :=
+  ⟨fun h ha => by simp [ha] at h; exact h, and_congr_right⟩
+
+/- simp rule in std -/
+@[simp] theorem and_congr_left_iff : (a ∧ c ↔ b ∧ c) ↔ c → (a ↔ b) := by
+  simp only [and_comm, ← and_congr_right_iff]
+
 /-# Decidable -/
 
+/--
+simp rule in std
+-/
 @[simp] theorem decide_eq_false_iff_not (p : Prop) {_ : Decidable p} : (decide p = false) ↔ ¬p :=
   ⟨of_decide_eq_false, decide_eq_false⟩
 
 theorem decide_eq_true_iff (p : Prop) [Decidable p] : (decide p = true) ↔ p := by simp
 
+/--
+simp rule in std
+-/
 @[simp] theorem decide_eq_decide {p q : Prop} {_ : Decidable p} {_ : Decidable q} :
     decide p = decide q ↔ (p ↔ q) := by
   apply Iff.intro
@@ -80,39 +157,55 @@ theorem decide_eq_true_iff (p : Prop) [Decidable p] : (decide p = true) ↔ p :=
   · intro h
     simp [h]
 
+/-
+Defined in std.
+We are making simp here.
+
+Mathlib makes Classical.not_not simp
+-/
 @[simp] theorem Decidable.not_not [Decidable p] : ¬¬p ↔ p := ⟨of_not_not, not_not_intro⟩
+
+/- Note.  This instance overlaps with `instDecidableNot` -/
+instance forall_prop_decidable {p} (P : p → Prop)
+  [Decidable p] [∀ h, Decidable (P h)] : Decidable (∀ h, P h) :=
+if h : p then
+  decidable_of_decidable_of_iff ⟨fun h2 _ => h2, fun al => al h⟩
+else isTrue fun h2 => absurd h2 h
+
+instance exists_prop_decidable {p} (P : p → Prop)
+  [Decidable p] [∀ h, Decidable (P h)] : Decidable (∃ h, P h) :=
+if h : p then
+  decidable_of_decidable_of_iff ⟨fun h2 => ⟨h, h2⟩, fun ⟨_, h2⟩ => h2⟩
+else isFalse fun ⟨h', _⟩ => h h'
 
 namespace Decidable
 
-/-- Simplify p ∨ ¬p -/
-@[simp] abbrev or_not_self := em
+/-- Excluded middle.  Added as alias for Decidable.em -/
+abbrev or_not_self := em
 
-@[simp] theorem not_or_self (p : Prop) [Decidable p] : ¬p ∨ p := by
+/-- Excluded middle commuted.  Added as alias for Decidable.em -/
+theorem not_or_self (p : Prop) [Decidable p] : ¬p ∨ p := by
   by_cases h : p <;> simp [h]
 
-@[simp]
-theorem decide_iff (p q : Prop) [Decidable p] [Decidable q] :
-    (decide (p ↔ q)) = ((p : Bool) == (q : Bool)) := by
-  by_cases g : p <;> by_cases h : q <;> simp [g, h, BEq.beq]
 
--- From Mathlib
+/- Mathlib simp rule -/
 @[simp]
-theorem if_true_left_eq_or (p : Prop) [Decidable p] (f : Prop) :
+theorem if_true_left (p : Prop) [Decidable p] (f : Prop) :
     ite p True f ↔ p ∨ f := by by_cases h : p <;> simp [h]
 
--- From Mathlib
+/- Mathlib simp rule -/
 @[simp]
-theorem if_false_left_eq_and (p : Prop) [Decidable p] (f : Prop) :
+theorem if_false_left (p : Prop) [Decidable p] (f : Prop) :
     ite p False f ↔ ¬p ∧ f := by by_cases h : p <;> simp [h]
 
--- From Mathlib
+/- Mathlib simp rule -/
 @[simp]
-theorem if_true_right_eq_or (p : Prop) [Decidable p] (t : Prop) :
+theorem if_true_right (p : Prop) [Decidable p] (t : Prop) :
     ite p t True ↔ ¬p ∨ t := by by_cases h : p <;> simp [h]
 
--- From Mathlib
+/- Mathlib simp rule -/
 @[simp]
-theorem if_false_right_eq_and (p : Prop) [Decidable p] (t : Prop) :
+theorem if_false_right (p : Prop) [Decidable p] (t : Prop) :
     ite p t False ↔ p ∧ t := by by_cases h : p <;> simp [h]
 
 end Decidable
@@ -120,17 +213,14 @@ end Decidable
 theorem not_forall_of_exists_not {p : α → Prop} : (∃ x, ¬p x) → ¬∀ x, p x
   | ⟨x, hn⟩, h => hn (h x)
 
-
 theorem Decidable.not_imp_symm [Decidable a] (h : ¬a → b) (hb : ¬b) : a :=
   byContradiction <| hb ∘ h
-
 
 protected theorem Decidable.not_forall {p : α → Prop} [Decidable (∃ x, ¬p x)]
     [∀ x, Decidable (p x)] : (¬∀ x, p x) ↔ ∃ x, ¬p x :=
   Iff.intro
     (Decidable.not_imp_symm fun nx x => Decidable.not_imp_symm (fun h => ⟨x, h⟩) nx)
     not_forall_of_exists_not
-
 
 @[nolint unusedArguments]
 theorem imp_intro {α β : Prop} (h : α) : β → α := fun _ => h
@@ -155,20 +245,108 @@ theorem Decidable.and_or_imp [Decidable a] : a ∧ b ∨ (a → c) ↔ a → b �
   if ha : a then by simp only [ha, true_and, true_imp_iff]
   else by simp only [ha, false_or, false_and, false_imp_iff]
 
+/-
+/--
+This generalize decide_not to accept an arbitrary proof `Decidable (Not u)`
+
+`decide_not` is simp in core.
+-/
+theorem decide_not' (u : Prop) [uvd : Decidable (Not u)] [ax : Decidable u]
+  : @Decidable.decide (Not u) uvd = !(@decide u ax) :=
+  if h : u then by
+    simp [h]
+  else by
+    simp [h]
+-/
+
+/-
+New theorem
+
+Added for addressing issue where `decide (not u)` would not simplify if
+created from `u -> False` and `instDecidableForAll` or `forall_prop_deciable`
+provided instance.
+-/
+theorem decide_forall_prop_decidable (u : Prop) (h : u → Prop) [ax : Decidable u]
+    [bx : ∀(a : u), Decidable (h a)]
+  : @Decidable.decide (no_index (∀ (a : u), h a)) (@forall_prop_decidable u h ax bx)
+     = if a : u then decide (h a) else true :=
+  if h : u then by
+    simp only [h, dite_true, decide_eq_decide]
+    exact Iff.intro (fun p => p True.intro) (fun p _ => p)
+  else by
+    simp only [h, dite_false, decide_eq_true_eq]
+    intro p
+    contradiction
+
+/--
+Added for overlap with `imp_false` and `decide_not`
+-/
+@[simp]
+theorem decide_not_instanceDecidableForAll [g : Decidable u] [h : Decidable False]
+    : @Decidable.decide (Not u) (@instDecidableForAll u False g h) = !(decide u) :=
+  match g with
+  | isTrue p => by
+    simp [p]
+  | isFalse p => by
+    simp [p, decide, instDecidableForAll]
+
+/--
+Added for overlap with `imp_false` and `decide_not`
+-/
+@[simp]
+theorem decide_not_forall_prop_decidable (u : Prop) [ax : Decidable u] (bx : u -> Decidable False)
+  : @Decidable.decide (Not u) (@forall_prop_decidable u (fun _ => False) ax bx)
+     = !decide u := by
+      by_cases h : u <;> simp [h]
+
+/-
+`Bool.not_and` simp jusitification.
+
+We have a critical pair from `decide (¬(p ∧ q))`:
+
+ 1. `decide (p → ¬q)` via `not_and` (in Std)
+ 2. `!decide (p ∧ q)` via `decide_not` (in Init) This further refines to
+    `!(decide p) || !(decide q)` via `Bool.decide_and` (in Mathlib)
+    and `Bool.not_and` (made simp in Mathlib).
+
+Solution is to introduce
+`decide_implies_instDecidableForAll` and
+`decide_implies_forall_prop_decidable`
+
+Then both normalize to `!(decide p) || !(decide q)`
+-/
+@[simp]
+theorem decide_implies_instDecidableForAll (u v : Prop) [ux : Decidable u] [vd : Decidable v]
+  : @Decidable.decide (u → v) instDecidableForAll = ((!(@decide u ux)) || (@decide v vd)) := by
+  by_cases h : u <;> simp [h]
+
+@[simp]
+theorem decide_implies_forall_prop_decidable (u v : Prop) [ux : Decidable u] [vd : Decidable v]
+  : @Decidable.decide (u → v) (forall_prop_decidable _) = ((!(@decide u ux)) || (@decide v vd)) :=
+  if h : u then by
+    simp [h]
+  else by
+    simp [h]
+
 namespace Classical
 
 /-- The Double Negation Theorem: `¬¬P` is equivalent to `P`.
 The left-to-right direction, double negation elimination (DNE),
 is classically true but not constructively. -/
+/- Scoped simp rule in Std; global in Mathlib. -/
 @[simp] theorem not_not : ¬¬a ↔ a := Decidable.not_not
 
+/- simp rule in Stdrig-/
 @[simp] theorem not_forall {p : α → Prop} : (¬∀ x, p x) ↔ ∃ x, ¬p x :=
   Decidable.not_forall
 
+/- Simp rule in Mathlib in root namespace. -/
 @[simp] theorem imp_iff_right_iff : (a → b ↔ b) ↔ a ∨ b := Decidable.imp_iff_right_iff
 
+/- Simp rule in Mathlib in root namespace. -/
 @[simp] theorem and_or_imp : a ∧ b ∨ (a → c) ↔ a → b ∨ c := Decidable.and_or_imp
 
 end Classical
 
+/- Export for Mathlib compat. -/
 export Classical (imp_iff_right_iff and_or_imp)
