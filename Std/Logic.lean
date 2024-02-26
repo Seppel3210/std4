@@ -206,8 +206,6 @@ theorem or_comm : a ∨ b ↔ b ∨ a := Or.comm
 theorem or_assoc : (a ∨ b) ∨ c ↔ a ∨ (b ∨ c) :=
   ⟨.rec (.imp_right .inl) (.inr ∘ .inr), .rec (.inl ∘ .inl) (.imp_left .inr)⟩
 
-theorem Or.resolve_left {a b : Prop} (h: a ∨ b) (na : ¬a) : b := h.elim (absurd · na) id
-
 theorem Or.neg_resolve_left (h : ¬a ∨ b) (ha : a) : b := h.elim (absurd ha) id
 
 theorem Or.resolve_right {a b : Prop} (h: a ∨ b) (nb : ¬b) : a := h.elim id (absurd · nb)
@@ -440,10 +438,6 @@ end quantifiers
 
 theorem Decidable.by_contra [Decidable p] : (¬p → False) → p := of_not_not
 
-/-- Construct a non-Prop by cases on an `Or`, when the left conjunct is decidable. -/
-protected def Or.by_cases [Decidable p] {α : Sort u} (h : p ∨ q) (h₁ : p → α) (h₂ : q → α) : α :=
-  if hp : p then h₁ hp else h₂ (h.resolve_left hp)
-
 /-- Construct a non-Prop by cases on an `Or`, when the right conjunct is decidable. -/
 protected def Or.by_cases' [Decidable q] {α : Sort u} (h : p ∨ q) (h₁ : p → α) (h₂ : q → α) : α :=
   if hq : q then h₂ hq else h₁ (h.resolve_right hq)
@@ -453,9 +447,6 @@ theorem Decidable.of_not_imp [Decidable a] (h : ¬(a → b)) : a :=
 
 theorem Decidable.not_imp_comm [Decidable a] [Decidable b] : (¬a → b) ↔ (¬b → a) :=
   ⟨not_imp_symm, not_imp_symm⟩
-
-theorem Decidable.not_imp_self [Decidable a] : (¬a → a) ↔ a := by
-  have := @imp_not_self (¬a); rwa [not_not] at this
 
 theorem Decidable.or_iff_not_imp_left [Decidable a] : a ∨ b ↔ (¬a → b) :=
   ⟨Or.resolve_left, fun h => dite _ .inl (.inr ∘ h)⟩
@@ -642,16 +633,6 @@ alias congr_arg₂ := congrArg₂
 alias congr_fun := congrFun
 alias congr_fun₂ := congrFun₂
 alias congr_fun₃ := congrFun₃
-
-theorem eq_mp_eq_cast (h : α = β) : Eq.mp h = cast h :=
-  rfl
-
-theorem eq_mpr_eq_cast (h : α = β) : Eq.mpr h = cast h.symm :=
-  rfl
-
-@[simp] theorem cast_cast : ∀ (ha : α = β) (hb : β = γ) (a : α),
-    cast hb (cast ha a) = cast (ha.trans hb) a
-  | rfl, rfl, _ => rfl
 
 theorem heq_of_cast_eq : ∀ (e : α = β) (_ : cast e a = a'), HEq a a'
   | rfl, rfl => .rfl

@@ -189,10 +189,25 @@ Made simp rule for parity with or_eq_false_iff.
 theorem or_eq_true_iff : ∀ (x y : Bool), (x || y) = true ↔ x = true ∨ y = true := by decide
 
 /--
-Defined in Mathlib and simp rule as  Bool.and_eq_false_eq_eq_false_or_eq_false
+This is defined in Std, but also defined in Mathlib as a simp rule named
+`Bool.and_eq_false_eq_eq_false_or_eq_false`.
+-/
+theorem and_eq_false_iff : ∀ (x y : Bool), (x && y) = false ↔ x = false ∨ y = false := by decide
+/-
+New simp rule that replaces `Bool.and_eq_false_eq_eq_false_or_eq_false` in
+Mathlib due to confluence:
+
+Consider the term: `¬((b && c) = true)`:
+
+1. Reduces to `((b && c) = false)` via `Bool.not_eq_true`
+2. Reduces to `¬(b = true ∧ c = true)` via `Bool.and_eq_true`.
+
+
+1. Further reduces to `b = false ∨ c = false` via `Bool.and_eq_false_eq_eq_false_or_eq_false`.
+2. Further reduces to `b = true → c = false` via `not_and` and `Bool.not_eq_true`.
 -/
 @[simp]
-theorem and_eq_false_iff : ∀ (x y : Bool), (x && y) = false ↔ x = false ∨ y = false := by decide
+theorem and_eq_false_imp : ∀ (x y : Bool), (x && y) = false ↔ (x = true → y = false) := by decide
 
 /--
 Simp rule in Mathlib as Bool.or_eq_false_eq_eq_false_and_eq_false.
@@ -218,21 +233,22 @@ theorem not_not_eq : ∀ {a b : Bool}, ¬(!a) = b ↔ a = b := by decide
 
 /-# decidability -/
 
+/- Theorem in Mathlib -/
+@[simp]
+protected theorem decide_coe (b : Bool) [h : Decidable (b = true)] : @decide (b = true) h = b := by
+  cases b
+  · exact decide_eq_false <| λ j => by cases j
+  · exact decide_eq_true <| rfl
+
 /-
-`decide_eq_true` and `decide_eq_false` added for confluence of
-`decide (¬(a = true))`.
+ `decide_eq_false` added for confluence of `decide (¬(a = false))`.
 
 Reduces to:
-1. `!decide (a = true)` via `decide_not`.
-2. `decide (a = false)` via `Bool.not_eq_true`
+1. `!decide (a = false)` via `decide_not`.
+2. `decide (a = true)` via `Bool.not_eq_false`
 
-These will both reduce to `!a` using `decide_eq_true` and `decide_eq_false`.
+These will both reduce to `a` using `decide_coe` and `decide_eq_false`.
 -/
-
-/- See note above -/
-@[simp]
-protected theorem decide_eq_true (b : Bool) : decide (b = true) = b := by
-  cases b <;> simp
 
 /- See note above -/
 @[simp]
@@ -329,16 +345,31 @@ lemmas.
 -/
 
 @[simp]
-theorem not_if_prop_coerce_true (p : Prop) [Decidable p] (b c : Bool) :
+theorem not_ite_eq_true_eq_true (p : Prop) [Decidable p] (b c : Bool) :
   ¬(ite p (b = true) (c = true)) ↔ (ite p (b = false) (c = false)) := by
   by_cases h : p <;> simp [h]
 
 @[simp]
-theorem not_if_prop_coerce_false (p : Prop) [Decidable p] (b c : Bool) :
+theorem not_ite_eq_false_eq_false (p : Prop) [Decidable p] (b c : Bool) :
   ¬(ite p (b = false) (c = false)) ↔ (ite p (b = true) (c = true)) := by
   by_cases h : p <;> simp [h]
 
+/- Added for consistency with `not_ite_eq_true_eq_true` -/
+@[simp]
+theorem not_ite_eq_true_eq_false (p : Prop) [Decidable p] (b c : Bool) :
+  ¬(ite p (b = true) (c = false)) ↔ (ite p (b = false) (c = true)) := by
+  by_cases h : p <;> simp [h]
+
+/- Added for consistency with `not_ite_eq_true_eq_true` -/
+@[simp]
+theorem not_ite_eq_false_eq_true (p : Prop) [Decidable p] (b c : Bool) :
+  ¬(ite p (b = false) (c = true)) ↔ (ite p (b = true) (c = false)) := by
+  by_cases h : p <;> simp [h]
+
 /-! cond -/
+
+theorem cond_eq_ite {α} (b : Bool) (t e : α) : cond b t e = if b then t else e := by
+  cases b <;> simp
 
 /- Mathlib simp rule -/
 @[simp]
@@ -348,42 +379,68 @@ theorem cond_not {α : Type _} (b : Bool) (t e : α) : cond (!b) t e = cond b e 
 @[simp]
 theorem cond_self {α} (c : Bool) (t : α) : cond c t t = t := by cases c <;> simp
 
+/-
+This is a simp rule in Mathlib, but results in non-confluence that is
+difficult to fix as decide distributes over propositions.
 
-/- Mathlib simp rule -/
-@[simp]
+A possible fix would be to completely simplify away `cond`, but that
+is not taken since it could result in major rewriting of code that is
+otherwise purely about `Bool`.
+-/
 theorem cond_decide {α} (p : Prop) [Decidable p] (t e : α) :
     cond (decide p) t e = if p then t else e := by
-  by_cases p <;> simp [*]
+  simp [cond_eq_ite]
+
+/-
+In lieu of cond_decide or cond_eq_ite being simp, we have more restained simp rules
+`cond_eq_ite_iff` and `ite_eq_cond_iff`.
+-/
+
+@[simp]
+theorem cond_eq_ite_iff {α : Type _} (a : Bool) (p : Prop) [Decidable p] (x y u v : α) :
+  (cond a x y = ite p u v) ↔ ite a x y = ite p u v := by
+  simp [Bool.cond_eq_ite]
+
+@[simp]
+theorem ite_eq_cond_iff {α : Type _} (p : Prop) [Decidable p] (a : Bool) (x y u v : α) :
+  (ite p x y = cond a u v) ↔ ite p x y = ite a u v := by
+  simp [Bool.cond_eq_ite]
 
 /--
 New rule (added for consistency with ite_eq_true_distrib)
 -/
 @[simp] theorem cond_eq_true_distrib (c t f : Bool) :
     (cond c t f = true) = ite (c = true) (t = true) (f = true) := by
-  cases c <;> simp
+  simp [Bool.cond_eq_ite]
 
 /--
 New rule (added for consistency with ite_eq_false_distrib)
 -/
 @[simp] theorem cond_eq_false_distrib (c t f : Bool) :
     (cond c t f = false) = ite (c = true) (t = false) (f = false) := by
-  cases c <;> simp
+  simp [Bool.cond_eq_ite]
+
+/- Mathlib clone -/
+protected theorem cond_true {α : Type u} {a b : α} : cond true a b = a := cond_true a b
+
+/- Mathlib clone -/
+protected theorem cond_false {α : Type u} {a b : α} : cond false a b = b := cond_false a b
 
 /- Added for parity with `if_true_left` -/
 @[simp]
-theorem cond_true_left (c f : Bool) : (cond c true f) = (c || f) := by cases c <;> simp
+theorem cond_true_left (c f : Bool) : (cond c true f) = (c || f) := by simp [Bool.cond_eq_ite]
 
 /- Added for parity with `if_false_left` -/
 @[simp]
-theorem cond_false_left  (c f : Bool) : (cond c false f) = (!c && f) := by cases c <;> simp
+theorem cond_false_left  (c f : Bool) : (cond c false f) = (!c && f) := by simp [Bool.cond_eq_ite]
 
 /- Added for parity with `if_true_right` -/
 @[simp]
-theorem cond_true_right   (c t : Bool) : (cond c t true) = (!c || t) := by cases c <;> simp
+theorem cond_true_right   (c t : Bool) : (cond c t true) = (!c || t) := by simp [Bool.cond_eq_ite]
 
 /- Added for parity with `if_false_right` -/
 @[simp]
-theorem cond_false_right (c t : Bool) : (cond c t false) = (c && t) := by cases c <;> simp
+theorem cond_false_right (c t : Bool) : (cond c t false) = (c && t) := by simp [Bool.cond_eq_ite]
 
 /- New simp rule-/
 @[simp]
@@ -394,6 +451,9 @@ theorem cond_true_same (c b : Bool) : cond c c b = (c || b) := by cases c <;> si
 theorem cond_false_same (c b : Bool) : cond c b c = (c && b) := by cases c <;> simp
 
 /-# misc -/
+
+@[simp]
+theorem default_bool : default = false := rfl
 
 -- @[simp] FIXME
 theorem eq_false_or_eq_implies (a : Bool) (p : Prop) : (a = false ∨ p) ↔ ((a = true) → p) := by

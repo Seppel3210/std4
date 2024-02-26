@@ -58,10 +58,20 @@ theorem and_comm : a ∧ b ↔ b ∧ a := And.comm
 
 /-# or -/
 
+
 theorem or_imp : (a ∨ b → c) ↔ (a → c) ∧ (b → c) :=
   ⟨fun h => ⟨h ∘ .inl, h ∘ .inr⟩, fun ⟨ha, hb⟩ => Or.rec ha hb⟩
 
---
+/-
+This is made simp for confluence with `¬((b || c) = true)`:
+
+Critical pair:
+1. `¬(b = true ∨ c = true)` via `Bool.or_eq_true`.
+2. `(b || c = false)` via `Bool.not_eq_true` which then
+   reduces to `b = false ∧ c = false` via Mathlib simp lemma
+   `Bool.or_eq_false_eq_eq_false_and_eq_false`.
+-/
+@[simp]
 theorem not_or : ¬(p ∨ q) ↔ ¬p ∧ ¬q := or_imp
 
 /- simp rule in std -/
@@ -69,6 +79,13 @@ theorem not_or : ¬(p ∨ q) ↔ ¬p ∧ ¬q := or_imp
 
 /- simp rule in std -/
 @[simp] theorem or_self_right : (a ∨ b) ∨ b ↔ a ∨ b := ⟨.rec id .inr, .rec (.inl ∘ .inl) .inr⟩
+
+theorem Or.resolve_left {a b : Prop} (h: a ∨ b) (na : ¬a) : b := h.elim (absurd · na) id
+
+/-- Construct a non-Prop by cases on an `Or`, when the left conjunct is decidable. -/
+protected def Or.by_cases [Decidable p] {α : Sort u} (h : p ∨ q) (h₁ : p → α) (h₂ : q → α) : α :=
+  if hp : p then h₁ hp else h₂ (h.resolve_left hp)
+
 
 /-# ite -/
 
@@ -178,6 +195,25 @@ if h : p then
   decidable_of_decidable_of_iff ⟨fun h2 => ⟨h, h2⟩, fun ⟨_, h2⟩ => h2⟩
 else isFalse fun ⟨h', _⟩ => h h'
 
+/- Mathlib simp rule -/
+@[simp]
+theorem if_true_left {p q : Prop} [Decidable p] :
+    ite p True q ↔ p ∨ q := by by_cases h : p <;> simp [h]
+
+/- Mathlib simp rule -/
+@[simp]
+theorem if_false_left {p q : Prop} [Decidable p] :
+    ite p False q ↔ ¬p ∧ q := by by_cases h : p <;> simp [h]
+
+/- Mathlib simp rule -/
+@[simp]
+theorem if_true_right {p q : Prop} [Decidable p] :
+    ite p q True ↔ ¬p ∨ q := by by_cases h : p <;> simp [h]
+
+/- Mathlib simp rule -/
+@[simp]
+theorem if_false_right {p q : Prop} [Decidable p] :
+    ite p q False ↔ p ∧ q := by by_cases h : p <;> simp [h]
 namespace Decidable
 
 /-- Excluded middle.  Added as alias for Decidable.em -/
@@ -188,25 +224,12 @@ theorem not_or_self (p : Prop) [Decidable p] : ¬p ∨ p := by
   by_cases h : p <;> simp [h]
 
 
-/- Mathlib simp rule -/
+/-
+Defined in Std and made simp in Mathlib.
+-/
 @[simp]
-theorem if_true_left (p : Prop) [Decidable p] (f : Prop) :
-    ite p True f ↔ p ∨ f := by by_cases h : p <;> simp [h]
-
-/- Mathlib simp rule -/
-@[simp]
-theorem if_false_left (p : Prop) [Decidable p] (f : Prop) :
-    ite p False f ↔ ¬p ∧ f := by by_cases h : p <;> simp [h]
-
-/- Mathlib simp rule -/
-@[simp]
-theorem if_true_right (p : Prop) [Decidable p] (t : Prop) :
-    ite p t True ↔ ¬p ∨ t := by by_cases h : p <;> simp [h]
-
-/- Mathlib simp rule -/
-@[simp]
-theorem if_false_right (p : Prop) [Decidable p] (t : Prop) :
-    ite p t False ↔ p ∧ t := by by_cases h : p <;> simp [h]
+theorem not_imp_self [Decidable a] : (¬a → a) ↔ a :=
+  Iff.intro (fun f => if h : a then h else f h) (fun h _ => h)
 
 end Decidable
 
@@ -328,6 +351,8 @@ theorem decide_implies_forall_prop_decidable (u v : Prop) [ux : Decidable u] [vd
   else by
     simp [h]
 
+theorem not_imp_self [Decidable a] : ¬a → a ↔ a := Decidable.not_imp_self
+
 namespace Classical
 
 /-- The Double Negation Theorem: `¬¬P` is equivalent to `P`.
@@ -350,3 +375,39 @@ end Classical
 
 /- Export for Mathlib compat. -/
 export Classical (imp_iff_right_iff and_or_imp)
+
+@[simp]
+theorem imp_and_neg_imp_iff (p q : Prop) : (p → q) ∧ (¬p → q) ↔ q :=
+  Iff.intro (fun (a : _ ∧ _) => (Classical.em p).rec a.left a.right)
+            (fun a => And.intro (fun _ => a) (fun _ => a))
+
+-- FIXME: Triage
+
+/-
+#print imp_iff_or_not
+#print imp_iff_or_not
+#print not_not
+#print or_and_left
+#print not_and_self_iff
+#print or_false_iff
+
+@[simp]
+theorem imp_and_neg_imp_iff (p q : Prop) : (p → q) ∧ (¬p → q) ↔ q :=
+
+  rw [imp_iff_or_not, imp_iff_or_not, not_not, ← or_and_left, not_and_self_iff, or_false_iff]
+-/
+
+@[simp]
+theorem eq_mp_eq_cast (h : α = β) : Eq.mp h = cast h :=
+  rfl
+
+@[simp]
+theorem eq_mpr_eq_cast (h : α = β) : Eq.mpr h = cast h.symm :=
+  rfl
+
+@[simp] theorem cast_cast : ∀ (ha : α = β) (hb : β = γ) (a : α),
+    cast hb (cast ha a) = cast (ha.trans hb) a
+  | rfl, rfl, _ => rfl
+
+@[simp] theorem eq_true_eq_id : Eq True = id := by
+  funext _; simp only [true_iff, id.def, eq_iff_iff]
