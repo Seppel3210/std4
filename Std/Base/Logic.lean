@@ -339,19 +339,42 @@ Solution is to introduce
 Then both normalize to `!(decide p) || !(decide q)`
 -/
 @[simp]
-theorem decide_implies_instDecidableForAll (u v : Prop) [ux : Decidable u] [vd : Decidable v]
-  : @Decidable.decide (u → v) instDecidableForAll = ((!(@decide u ux)) || (@decide v vd)) := by
+theorem decide_implies_instDecidableForAll (u v : Prop) (du : Decidable u) (dv : Decidable v)
+  : @Decidable.decide (u → v) (@instDecidableForAll _ _ du dv) = ((!decide u) || decide v) := by
   by_cases h : u <;> simp [h]
 
 @[simp]
-theorem decide_implies_forall_prop_decidable (u v : Prop) [ux : Decidable u] [vd : Decidable v]
-  : @Decidable.decide (u → v) (forall_prop_decidable _) = ((!(@decide u ux)) || (@decide v vd)) :=
+theorem decide_implies_forall_prop_decidable (u v : Prop) (du : Decidable u) (dv : u → Decidable v)
+  : @Decidable.decide (u → v) (@forall_prop_decidable _ _ du dv) =
+    if h : u then
+      @decide v (dv h)
+    else
+      True :=
   if h : u then by
     simp [h]
   else by
     simp [h]
 
+@[simp]
+theorem decide_ite (u : Prop) (du : Decidable u) (p q : Prop)
+      (dp : Decidable p) (dq : Decidable q) :
+    @decide (@ite _ u du p q) (@instDecidableIteProp u p q du dp dq) =
+      @ite _ u du (@decide p dp) (@decide q dq) := by
+  by_cases h : u <;> simp [h]
+
 theorem not_imp_self [Decidable a] : ¬a → a ↔ a := Decidable.not_imp_self
+
+theorem Decidable.of_not_imp [Decidable a] (h : ¬(a → b)) : a :=
+  if g : a then g else False.elim (h (False.elim ∘ g))
+
+theorem not_of_not_imp {a : Prop} : ¬(a → b) → ¬b := mt fun h _ => h
+
+theorem not_imp_of_and_not : a ∧ ¬b → ¬(a → b)
+  | ⟨ha, hb⟩, h => hb <| h ha
+
+theorem Decidable.not_imp_iff_and_not [Decidable a] : ¬(a → b) ↔ a ∧ ¬b :=
+  Iff.intro (fun h => And.intro (of_not_imp h) (not_of_not_imp h))
+            not_imp_of_and_not
 
 namespace Classical
 
@@ -361,8 +384,15 @@ is classically true but not constructively. -/
 /- Scoped simp rule in Std; global in Mathlib. -/
 @[simp] theorem not_not : ¬¬a ↔ a := Decidable.not_not
 
-/- simp rule in Stdrig-/
-@[simp] theorem not_forall {p : α → Prop} : (¬∀ x, p x) ↔ ∃ x, ¬p x :=
+@[simp]
+theorem not_imp : ¬(a → b) ↔ a ∧ ¬b := Decidable.not_imp_iff_and_not
+
+/-
+simp rule in Std
+
+This is given low precedence so `not_imp` gets priority.
+-/
+@[simp low] theorem not_forall {p : α → Prop} : (¬∀ x, p x) ↔ ∃ x, ¬p x :=
   Decidable.not_forall
 
 /- Simp rule in Mathlib in root namespace. -/

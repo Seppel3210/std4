@@ -235,7 +235,7 @@ theorem not_not_eq : ∀ {a b : Bool}, ¬(!a) = b ↔ a = b := by decide
 
 /- Theorem in Mathlib -/
 @[simp]
-protected theorem decide_coe (b : Bool) [h : Decidable (b = true)] : @decide (b = true) h = b := by
+protected theorem decide_coe (b : Bool) (h : Decidable (b = true)) : @decide (b = true) h = b := by
   cases b
   · exact decide_eq_false <| λ j => by cases j
   · exact decide_eq_true <| rfl
@@ -259,22 +259,24 @@ protected theorem decide_eq_false (b : Bool) : decide (b = false) = !b := by
 Mathlib simp rule
 -/
 @[simp]
-theorem decide_and (p q : Prop) [Decidable p] [Decidable q] : decide (p ∧ q) = (p && q) := by
+theorem decide_and (p q : Prop) (dp : Decidable p) (dq : Decidable q) :
+    @decide (p ∧ q) (@instDecidableAnd _ _ dp dq) = (p && q) := by
   by_cases p <;> by_cases q <;> simp [*]
 
 /-
 Mathlib simp rule
 -/
 @[simp]
-theorem decide_or (p q : Prop) [Decidable p] [Decidable q] : decide (p ∨ q) = (p || q) := by
+theorem decide_or (p q : Prop) (dp : Decidable p) (dq : Decidable q) :
+    @decide (p ∨ q) (@instDecidableOr _ _ dp dq) = (p || q) := by
   by_cases p <;> by_cases q <;> simp [*]
 
 /-
 This is a new rule.  Added for consistency with decide_and/decide_or.
 -/
 @[simp]
-theorem decide_iff_dist (p q : Prop) [Decidable p] [Decidable q] :
-    (decide (p ↔ q)) = ((p : Bool) == (q : Bool)) := by
+theorem decide_iff_dist (p q : Prop) (dp : Decidable p) (dq : Decidable q) :
+    (@decide (p ↔ q) (@instDecidableIff _ _ dp dq)) = (decide p == decide q) := by
   by_cases g : p <;> by_cases h : q <;> simp [g, h, BEq.beq]
 
 /- ## Simp lemmas for Bool to Prop normal forms: `b = true`, `b = false`-/

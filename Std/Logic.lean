@@ -31,8 +31,6 @@ theorem not_not_not : ¬¬¬a ↔ ¬a := ⟨mt not_not_intro, not_not_intro⟩
 
 theorem not_not_of_not_imp : ¬(a → b) → ¬¬a := mt Not.elim
 
-theorem not_of_not_imp {a : Prop} : ¬(a → b) → ¬b := mt fun h _ => h
-
 /-! ## iff -/
 
 -- This is needed for `calc` to work with `iff`.
@@ -243,9 +241,6 @@ theorem or_iff_right (ha : ¬a) : a ∨ b ↔ b := or_iff_right_iff_imp.2 ha.eli
 
 /-! ## distributivity -/
 
-theorem not_imp_of_and_not : a ∧ ¬b → ¬(a → b)
-  | ⟨ha, hb⟩, h => hb <| h ha
-
 theorem imp_and {α} : (α → b ∧ c) ↔ (α → b) ∧ (α → c) :=
   ⟨fun h => ⟨fun ha => (h ha).1, fun ha => (h ha).2⟩, fun h ha => ⟨h.1 ha, h.2 ha⟩⟩
 
@@ -442,9 +437,6 @@ theorem Decidable.by_contra [Decidable p] : (¬p → False) → p := of_not_not
 protected def Or.by_cases' [Decidable q] {α : Sort u} (h : p ∨ q) (h₁ : p → α) (h₂ : q → α) : α :=
   if hq : q then h₂ hq else h₁ (h.resolve_right hq)
 
-theorem Decidable.of_not_imp [Decidable a] (h : ¬(a → b)) : a :=
-  byContradiction (not_not_of_not_imp h)
-
 theorem Decidable.not_imp_comm [Decidable a] [Decidable b] : (¬a → b) ↔ (¬b → a) :=
   ⟨not_imp_symm, not_imp_symm⟩
 
@@ -472,9 +464,6 @@ theorem Decidable.imp_or [Decidable a] : (a → b ∨ c) ↔ (a → b) ∨ (a �
 theorem Decidable.imp_or' [Decidable b] : (a → b ∨ c) ↔ (a → b) ∨ (a → c) :=
   if h : b then by simp [h] else by
     rw [eq_false h, false_or]; exact (or_iff_right_of_imp fun hx x => (hx x).elim).symm
-
-theorem Decidable.not_imp_iff_and_not [Decidable a] : ¬(a → b) ↔ a ∧ ¬b :=
-  ⟨fun h => ⟨of_not_imp h, not_of_not_imp h⟩, not_imp_of_and_not⟩
 
 theorem Decidable.peirce (a b : Prop) [Decidable a] : ((a → b) → a) → a :=
   if ha : a then fun _ => ha else fun h => h ha.elim
