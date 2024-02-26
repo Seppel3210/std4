@@ -305,47 +305,35 @@ theorem decide_forall_prop_decidable (u : Prop) (h : u → Prop) [ax : Decidable
 Added for overlap with `imp_false` and `decide_not`
 -/
 @[simp]
-theorem decide_not_instanceDecidableForAll [g : Decidable u] [h : Decidable False]
-    : @Decidable.decide (Not u) (@instDecidableForAll u False g h) = !(decide u) :=
+theorem decide_not' {u : Prop} {g : Decidable u} {h : Decidable (Not u)}
+    : decide (Not u) = !(decide u) :=
   match g with
   | isTrue p => by
     simp [p]
   | isFalse p => by
-    simp [p, decide, instDecidableForAll]
-
-/--
-Added for overlap with `imp_false` and `decide_not`
--/
-@[simp]
-theorem decide_not_forall_prop_decidable (u : Prop) [ax : Decidable u] (bx : u -> Decidable False)
-  : @Decidable.decide (Not u) (@forall_prop_decidable u (fun _ => False) ax bx)
-     = !decide u := by
-      by_cases h : u <;> simp [h]
+    match h with
+    | isTrue q =>
+      simp [p, q, decide]
+    | isFalse q =>
+      contradiction
 
 /-
-`Bool.not_and` simp jusitification.
+`decide_implies` simp justification.
 
 We have a critical pair from `decide (¬(p ∧ q))`:
 
  1. `decide (p → ¬q)` via `not_and` (in Std)
  2. `!decide (p ∧ q)` via `decide_not` (in Init) This further refines to
-    `!(decide p) || !(decide q)` via `Bool.decide_and` (in Mathlib)
-    and `Bool.not_and` (made simp in Mathlib).
+    `!(decide p) || !(decide q)` via `Bool.decide_and` (in Mathlib) and
+    `Bool.not_and` (made simp in Mathlib).
 
-Solution is to introduce
-`decide_implies_instDecidableForAll` and
-`decide_implies_forall_prop_decidable`
-
-Then both normalize to `!(decide p) || !(decide q)`
+We introduce `decide_implies` below and then both normalize to
+`!(decide p) || !(decide q)`.
 -/
 @[simp]
-theorem decide_implies_instDecidableForAll (u v : Prop) (du : Decidable u) (dv : Decidable v)
-  : @Decidable.decide (u → v) (@instDecidableForAll _ _ du dv) = ((!decide u) || decide v) := by
-  by_cases h : u <;> simp [h]
-
-@[simp]
-theorem decide_implies_forall_prop_decidable (u v : Prop) (du : Decidable u) (dv : u → Decidable v)
-  : @Decidable.decide (u → v) (@forall_prop_decidable _ _ du dv) =
+theorem decide_implies (u v : Prop)
+    {duv : Decidable (u → v)} {du : Decidable u} {dv : u → Decidable v}
+  : decide (u → v) =
     if h : u then
       @decide v (dv h)
     else
@@ -356,10 +344,9 @@ theorem decide_implies_forall_prop_decidable (u v : Prop) (du : Decidable u) (dv
     simp [h]
 
 @[simp]
-theorem decide_ite (u : Prop) (du : Decidable u) (p q : Prop)
-      (dp : Decidable p) (dq : Decidable q) :
-    @decide (@ite _ u du p q) (@instDecidableIteProp u p q du dp dq) =
-      @ite _ u du (@decide p dp) (@decide q dq) := by
+theorem decide_ite (u : Prop) {du : Decidable u} (p q : Prop)
+      {dpq : Decidable (ite u p q)} {dp : Decidable p} {dq : Decidable q} :
+    decide (ite u p q) = ite u (decide p) (decide q) := by
   by_cases h : u <;> simp [h]
 
 theorem not_imp_self [Decidable a] : ¬a → a ↔ a := Decidable.not_imp_self
@@ -404,7 +391,7 @@ This is given low precedence so `not_imp` gets priority.
 end Classical
 
 /- Export for Mathlib compat. -/
-export Classical (imp_iff_right_iff and_or_imp)
+export Classical (imp_iff_right_iff and_or_imp not_imp)
 
 @[simp]
 theorem imp_and_neg_imp_iff (p q : Prop) : (p → q) ∧ (¬p → q) ↔ q :=

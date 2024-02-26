@@ -231,54 +231,6 @@ theorem not_not_eq : ∀ {a b : Bool}, ¬(!a) = b ↔ a = b := by decide
 -- because `(_ = true)` is introduced implicitly when coericing a `Bool` to a
 -- `Prop` and `(_ = false)` arrises from `simp` rules on negation.
 
-/-# decidability -/
-
-/- Theorem in Mathlib -/
-@[simp]
-protected theorem decide_coe (b : Bool) (h : Decidable (b = true)) : @decide (b = true) h = b := by
-  cases b
-  · exact decide_eq_false <| λ j => by cases j
-  · exact decide_eq_true <| rfl
-
-/-
- `decide_eq_false` added for confluence of `decide (¬(a = false))`.
-
-Reduces to:
-1. `!decide (a = false)` via `decide_not`.
-2. `decide (a = true)` via `Bool.not_eq_false`
-
-These will both reduce to `a` using `decide_coe` and `decide_eq_false`.
--/
-
-/- See note above -/
-@[simp]
-protected theorem decide_eq_false (b : Bool) : decide (b = false) = !b := by
-  cases b <;> simp
-
-/-
-Mathlib simp rule
--/
-@[simp]
-theorem decide_and (p q : Prop) (dp : Decidable p) (dq : Decidable q) :
-    @decide (p ∧ q) (@instDecidableAnd _ _ dp dq) = (p && q) := by
-  by_cases p <;> by_cases q <;> simp [*]
-
-/-
-Mathlib simp rule
--/
-@[simp]
-theorem decide_or (p q : Prop) (dp : Decidable p) (dq : Decidable q) :
-    @decide (p ∨ q) (@instDecidableOr _ _ dp dq) = (p || q) := by
-  by_cases p <;> by_cases q <;> simp [*]
-
-/-
-This is a new rule.  Added for consistency with decide_and/decide_or.
--/
-@[simp]
-theorem decide_iff_dist (p q : Prop) (dp : Decidable p) (dq : Decidable q) :
-    (@decide (p ↔ q) (@instDecidableIff _ _ dp dq)) = (decide p == decide q) := by
-  by_cases g : p <;> by_cases h : q <;> simp [g, h, BEq.beq]
-
 /- ## Simp lemmas for Bool to Prop normal forms: `b = true`, `b = false`-/
 
 /- New simp rule -/
@@ -297,39 +249,87 @@ theorem coe_false_iff_true : ∀(a b : Bool), (a = false ↔ b) ↔ (!a) = b := 
 @[simp]
 theorem coe_false_iff_false : ∀(a b : Bool), (a = false ↔ b = false) ↔ (!a) = (!b) := by decide
 
+/-# decidability -/
+
+/- Theorem in Mathlib -/
+@[simp]
+protected theorem decide_coe (b : Bool) {h : Decidable (b = true)} : @decide (b = true) h = b := by
+  cases b
+  · exact decide_eq_false <| λ j => by cases j
+  · exact decide_eq_true <| rfl
+
+/-
+ `decide_eq_false` added for confluence of `decide (¬(a = false))`.
+
+Reduces to:
+1. `!decide (a = false)` via `decide_not`.
+2. `decide (a = true)` via `Bool.not_eq_false`
+
+These will both reduce to `a` using `decide_coe` and `decide_eq_false`.
+-/
+
+/- See note above -/
+@[simp]
+protected theorem decide_eq_false (b : Bool) {h : Decidable (b = false)} : @decide (b = false) h = !b := by
+  cases b <;> simp
+
+/-
+Mathlib simp rule
+-/
+@[simp]
+theorem decide_and (p q : Prop) {dpq : Decidable (p ∧ q)} {dp : Decidable p} {dq : Decidable q} :
+    decide (p ∧ q) = (p && q) := by
+  by_cases p <;> by_cases q <;> simp [*]
+
+/-
+Mathlib simp rule
+-/
+@[simp]
+theorem decide_or (p q : Prop) {dpq : Decidable (p ∨ q)} {dp : Decidable p} {dq : Decidable q} :
+    decide (p ∨ q) = (p || q) := by
+  by_cases p <;> by_cases q <;> simp [*]
+
+/-
+This is a new rule.  Added for consistency with decide_and/decide_or.
+-/
+@[simp]
+theorem decide_iff_dist (p q : Prop) {dpq : Decidable (p ↔ q)} {dp : Decidable p} {dq : Decidable q} :
+    decide (p ↔ q) = (decide p == decide q) := by
+  by_cases g : p <;> by_cases h : q <;> simp [g, h, BEq.beq]
+
 /-# ite -/
 
 /- Added for compatibility with `if_true_left` (Mathlib simp rule) -/
 @[simp]
-theorem if_true_left  (p : Prop) [Decidable p] (f : Bool) :
+theorem if_true_left  (p : Prop) {h : Decidable p} (f : Bool) :
     (ite p true f) = (p || f) := by by_cases h : p <;> simp [h]
 
 /- Added for compatibility with `if_false_left` (Mathlib simp rule) -/
 @[simp]
-theorem if_false_left  (p : Prop) [Decidable p] (f : Bool) :
+theorem if_false_left  (p : Prop) {h : Decidable p} (f : Bool) :
     (ite p false f) = (!p && f) := by by_cases h : p <;> simp [h]
 
 /- Added for compatibility with `if_true_right` (Mathlib simp rule) -/
 @[simp]
-theorem if_true_right  (p : Prop) [Decidable p] (t : Bool) :
+theorem if_true_right  (p : Prop) {h : Decidable p} (t : Bool) :
     (ite p t true) = (!(p : Bool) || t) := by by_cases h : p <;> simp [h]
 
 /- Added for compatibility with `if_false_right` (Mathlib simp rule) -/
 @[simp]
-theorem if_false_right  (p : Prop) [Decidable p] (t : Bool) :
+theorem if_false_right  (p : Prop) {h : Decidable p} (t : Bool) :
     (ite p t false) = (p && t) := by by_cases h : p <;> simp [h]
 
 /-
 Defined in Mathlib (simp rule)
 -/
-@[simp] theorem ite_eq_true_distrib (p : Prop) [Decidable p] (t f : Bool) :
+@[simp] theorem ite_eq_true_distrib (p : Prop) {h : Decidable p} (t f : Bool) :
     (ite p t f = true) = ite p (t = true) (f = true) := by
   by_cases h : p <;> simp [h]
 
 /-
 Defined in Mathlib (simp rule)
 -/
-@[simp] theorem ite_eq_false_distrib (p : Prop) [Decidable p] (t f : Bool) :
+@[simp] theorem ite_eq_false_distrib (p : Prop) {h : Decidable p} (t f : Bool) :
     (ite p t f = false) = ite p (t = false) (f = false) := by
   by_cases h : p <;> simp [h]
 
@@ -347,24 +347,24 @@ lemmas.
 -/
 
 @[simp]
-theorem not_ite_eq_true_eq_true (p : Prop) [Decidable p] (b c : Bool) :
+theorem not_ite_eq_true_eq_true (p : Prop) {h : Decidable p} (b c : Bool) :
   ¬(ite p (b = true) (c = true)) ↔ (ite p (b = false) (c = false)) := by
   by_cases h : p <;> simp [h]
 
 @[simp]
-theorem not_ite_eq_false_eq_false (p : Prop) [Decidable p] (b c : Bool) :
+theorem not_ite_eq_false_eq_false (p : Prop) {h : Decidable p} (b c : Bool) :
   ¬(ite p (b = false) (c = false)) ↔ (ite p (b = true) (c = true)) := by
   by_cases h : p <;> simp [h]
 
 /- Added for consistency with `not_ite_eq_true_eq_true` -/
 @[simp]
-theorem not_ite_eq_true_eq_false (p : Prop) [Decidable p] (b c : Bool) :
+theorem not_ite_eq_true_eq_false (p : Prop) {h : Decidable p} (b c : Bool) :
   ¬(ite p (b = true) (c = false)) ↔ (ite p (b = false) (c = true)) := by
   by_cases h : p <;> simp [h]
 
 /- Added for consistency with `not_ite_eq_true_eq_true` -/
 @[simp]
-theorem not_ite_eq_false_eq_true (p : Prop) [Decidable p] (b c : Bool) :
+theorem not_ite_eq_false_eq_true (p : Prop) {h : Decidable p} (b c : Bool) :
   ¬(ite p (b = false) (c = true)) ↔ (ite p (b = true) (c = false)) := by
   by_cases h : p <;> simp [h]
 
@@ -399,12 +399,12 @@ In lieu of cond_decide or cond_eq_ite being simp, we have more restained simp ru
 -/
 
 @[simp]
-theorem cond_eq_ite_iff {α : Type _} (a : Bool) (p : Prop) [Decidable p] (x y u v : α) :
+theorem cond_eq_ite_iff (a : Bool) (p : Prop) {h : Decidable p} (x y u v : α) :
   (cond a x y = ite p u v) ↔ ite a x y = ite p u v := by
   simp [Bool.cond_eq_ite]
 
 @[simp]
-theorem ite_eq_cond_iff {α : Type _} (p : Prop) [Decidable p] (a : Bool) (x y u v : α) :
+theorem ite_eq_cond_iff (p : Prop) {h : Decidable p} (a : Bool) (x y u v : α) :
   (ite p x y = cond a u v) ↔ ite p x y = ite a u v := by
   simp [Bool.cond_eq_ite]
 
