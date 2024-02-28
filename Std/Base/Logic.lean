@@ -11,8 +11,6 @@ attribute [simp] cast_eq cast_heq
 /-# iff -/
 
 /- simp rule in std-/
-@[simp] theorem eq_iff_iff {p q : Prop} : (p = q) ↔ (p ↔ q) :=
-  Iff.intro Iff.of_eq  propext
 
 theorem iff_of_true (ha : a) (hb : b) : a ↔ b := ⟨fun _ => hb, fun _ => ha⟩
 
@@ -20,65 +18,13 @@ theorem iff_true_intro (h : a) : a ↔ True := iff_of_true h ⟨⟩
 
 /-# implication -/
 
-/- simp rule in std-/
-@[simp] theorem imp_self : (a → a) ↔ True := iff_true_intro id
-
-/- simp rule in std-/
-@[simp] theorem imp_not_self : (a → ¬a) ↔ ¬a := ⟨fun h ha => h ha ha, fun h _ => h⟩
-
-/- non-simp rule in std; made simp in Mathlib. -/
-@[simp] theorem imp_false : (a → False) ↔ ¬a := Iff.rfl
-
 /-# and -/
 
-/- simp rule in std-/
-@[simp] theorem and_imp : (a ∧ b → c) ↔ (a → b → c) :=
-  Iff.intro (fun h ha hb => h ⟨ha, hb⟩) (fun h ⟨ha, hb⟩ => h ha hb)
-
-/- simp rule in std -/
-@[simp] theorem not_and : ¬(a ∧ b) ↔ (a → ¬b) := and_imp
-
-/- simp rule in std -/
-@[simp]
-theorem and_not_self : ¬(a ∧ ¬a) | ⟨ha, hn⟩ => hn ha
-
-/- simp rule in std -/
-@[simp]
-theorem not_and_self : ¬(¬a ∧ a) | ⟨hn, ha⟩ => hn ha
-
-/- simp rule in std -/
-@[simp] theorem and_self_left : a ∧ (a ∧ b) ↔ a ∧ b :=
-  ⟨fun h => ⟨h.1, h.2.2⟩, fun h => ⟨h.1, h.1, h.2⟩⟩
-
-/- simp rule in std -/
-@[simp] theorem and_self_right : (a ∧ b) ∧ b ↔ a ∧ b :=
-  ⟨fun h => ⟨h.1.1, h.2⟩, fun h => ⟨⟨h.1, h.2⟩, h.2⟩⟩
-
-theorem and_comm : a ∧ b ↔ b ∧ a := And.comm
 
 /-# or -/
 
 
-theorem or_imp : (a ∨ b → c) ↔ (a → c) ∧ (b → c) :=
-  ⟨fun h => ⟨h ∘ .inl, h ∘ .inr⟩, fun ⟨ha, hb⟩ => Or.rec ha hb⟩
 
-/-
-This is made simp for confluence with `¬((b || c) = true)`:
-
-Critical pair:
-1. `¬(b = true ∨ c = true)` via `Bool.or_eq_true`.
-2. `(b || c = false)` via `Bool.not_eq_true` which then
-   reduces to `b = false ∧ c = false` via Mathlib simp lemma
-   `Bool.or_eq_false_eq_eq_false_and_eq_false`.
--/
-@[simp]
-theorem not_or : ¬(p ∨ q) ↔ ¬p ∧ ¬q := or_imp
-
-/- simp rule in std -/
-@[simp] theorem or_self_left : a ∨ (a ∨ b) ↔ a ∨ b := ⟨.rec .inl id, .rec .inl (.inr ∘ .inr)⟩
-
-/- simp rule in std -/
-@[simp] theorem or_self_right : (a ∨ b) ∨ b ↔ a ∨ b := ⟨.rec id .inr, .rec (.inl ∘ .inl) .inr⟩
 
 theorem Or.resolve_left {a b : Prop} (h: a ∨ b) (na : ¬a) : b := h.elim (absurd · na) id
 
@@ -88,25 +34,6 @@ protected def Or.by_cases [Decidable p] {α : Sort u} (h : p ∨ q) (h₁ : p �
 
 
 /-# ite -/
-
-/-- Negation of the condition `P : Prop` in a `dite` is the same as swapping the branches. -/
-/- simp rule in std -/
-@[simp] theorem dite_not (P : Prop) {_ : Decidable P}  (x : ¬P → α) (y : ¬¬P → α) :
-    dite (¬P) x y = dite P (fun h => y (not_not_intro h)) x := by
-  by_cases h : P <;> simp [h]
-
-/-- Negation of the condition `P : Prop` in a `ite` is the same as swapping the branches. -/
-/- simp rule in std -/
-@[simp] theorem ite_not (P : Prop) {_ : Decidable P} (x y : α) : ite (¬P) x y = ite P y x :=
-  dite_not P (fun _ => x) (fun _ => y)
-
-/- New simp rule -/
-@[simp] theorem ite_true_same (p q : Prop) [Decidable p] : (if p then p else q) = (p ∨ q) := by
-  by_cases h : p <;> simp [h]
-
-/- New simp rule -/
-@[simp] theorem ite_false_same (p q : Prop) [Decidable p] : (if p then q else p) = (p ∧ q) := by
-  by_cases h : p <;> simp [h]
 
 /- in std (not simp)  -/
 theorem iff_not_self : ¬(a ↔ ¬a) | H => let f h := H.1 h h; f (H.2 f)
