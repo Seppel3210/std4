@@ -163,7 +163,8 @@ theorem cons_eq_append :
 theorem append_eq_append_iff {a b c d : List α} :
   a ++ b = c ++ d ↔ (∃ a', c = a ++ a' ∧ b = a' ++ d) ∨ ∃ c', a = c ++ c' ∧ d = c' ++ b := by
   induction a generalizing c with
-  | nil => simp; exact (or_iff_left_of_imp fun ⟨_, ⟨e, rfl⟩, h⟩ => e ▸ h.symm).symm
+  | nil => simp only [nil_append, exists_eq_left', nil_eq_append, iff_self_or, forall_exists_index,
+    and_imp, forall_eq_apply_imp_iff]; intros; simp [*]
   | cons a as ih => cases c <;> simp [eq_comm, and_assoc, ih, and_or_left]
 
 @[simp] theorem mem_append {a : α} {s t : List α} : a ∈ s ++ t ↔ a ∈ s ∨ a ∈ t := by
@@ -221,8 +222,8 @@ theorem forall_mem_map_iff {f : α → β} {l : List α} {P : β → Prop} :
 
 @[simp] theorem length_zipWith (f : α → β → γ) (l₁ l₂) :
     length (zipWith f l₁ l₂) = min (length l₁) (length l₂) := by
-  induction l₁ generalizing l₂ <;> cases l₂ <;>
-    simp_all [add_one, succ_min_succ, Nat.zero_min, Nat.min_zero]
+  induction l₁ generalizing l₂ <;> cases l₂ <;> simp [zipWith]
+  case cons.cons ih _ _ => simp [ih, succ_min_succ]
 
 @[simp]
 theorem zipWith_map {μ} (f : γ → δ → μ) (g : α → γ) (h : β → δ) (l₁ : List α) (l₂ : List β) :
@@ -860,7 +861,7 @@ theorem get!_of_get? [Inhabited α] : ∀ {l : List α} {n}, get? l n = some a �
 @[simp] theorem length_take : ∀ (i : Nat) (l : List α), length (take i l) = min i (length l)
   | 0, l => by simp [Nat.zero_min]
   | succ n, [] => by simp [Nat.min_zero]
-  | succ n, _ :: l => by simp [Nat.succ_min_succ, add_one, length_take]
+  | succ n, _ :: l => by simp [succ_min_succ, length_take]
 
 theorem length_take_le (n) (l : List α) : length (take n l) ≤ n := by simp [Nat.min_le_left]
 
@@ -1063,10 +1064,10 @@ theorem contains_eq_any_beq [BEq α] (l : List α) (a : α) : l.contains a = l.a
   induction l with simp | cons b l => cases a == b <;> simp [*]
 
 theorem not_all_eq_any_not (l : List α) (p : α → Bool) : (!l.all p) = l.any fun a => !p a := by
-  induction l with simp | cons _ _ ih => rw [Bool.not_and, ih]
+  induction l <;> simp [*]
 
 theorem not_any_eq_all_not (l : List α) (p : α → Bool) : (!l.any p) = l.all fun a => !p a := by
-  induction l with simp | cons _ _ ih => rw [Bool.not_or, ih]
+  induction l <;> simp [*]
 
 theorem or_all_distrib_left (l : List α) (p : α → Bool) (q : Bool) :
     (q || l.all p) = l.all fun a => q || p a := by
