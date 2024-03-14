@@ -735,7 +735,7 @@ where
       if h' : l[i] == a then
         simp [h, h']
       else
-        simp [h, h', ←aux l (i+1), Function.comp_def, Nat.add_succ, Nat.succ_add]
+        simp [h, h', ←aux l (i+1), Function.comp_def, ←Nat.add_assoc, Nat.add_right_comm]
     else
       have h' : l.size ≤ i := Nat.le_of_not_lt h
       simp [h, List.drop_length_le h', List.indexOf?]
@@ -755,21 +755,16 @@ theorem eraseIdx_swap_data {l : Array α} (i : Nat) (lt : i + 1 < size l) :
       simp [swap_def, List.set_succ, getElem_eq_data_get]
     simp [this, ih]
 
-theorem eraseIdxAux_data {l : Array α} {i : Nat} (le : i+1 ≤ l.size) :
-    (eraseIdxAux (i+1) l).data = l.data.eraseIdx i := by
-  rw [eraseIdxAux];
-  if h : i+1 < size l then
-    rw [dif_pos h, eraseIdxAux_data (i := i+1)]
-    apply eraseIdx_swap_data
-    simpa
-  else
-    rw [dif_neg h]
-    rw [Nat.not_lt] at h
-    have last_idx : l.size = i + 1 := Nat.le_antisymm h le
-    let ⟨xs⟩ := l
-    rw [pop, ←List.dropLast_eq_eraseIdx]
-    exact last_idx.symm
-termination_by l.size - i
+theorem feraseIdx_data {l : Array α} {i : Fin l.size} :
+    (l.feraseIdx i).data = l.data.eraseIdx i := by
+  induction l, i using feraseIdx.induct with
+  | @case1 a i lt a' i' _ ih =>
+    rw [feraseIdx]
+    simp [lt, ih, a', eraseIdx_swap_data i lt]
+  | case2 a i lt =>
+    have : i + 1 ≥ a.size := Nat.ge_of_not_lt lt
+    have last : i + 1 = a.size := Nat.le_antisymm i.is_lt this
+    simp [feraseIdx, lt, List.dropLast_eq_eraseIdx last]
 
 @[simp] theorem erase_data [BEq α] {l : Array α} {a : α} : (l.erase a).data = l.data.erase a := by
   let ⟨xs⟩ := l
@@ -780,7 +775,7 @@ termination_by l.size - i
     simpa [←indexOf?_data] using congrArg (Option.map Fin.val) h
   | some i =>
     simp only [erase, h]
-    rw [feraseIdx, eraseIdxAux_data i.is_lt, ←List.eraseIdx_indexOf_eq_erase]
+    rw [feraseIdx_data, ←List.eraseIdx_indexOf_eq_erase]
     congr
     rw [List.indexOf_eq_indexOf?, indexOf?_data]
     simp [h]
